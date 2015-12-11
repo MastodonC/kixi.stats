@@ -3,8 +3,8 @@
 (defn sqrt [x]
   (Math/sqrt x))
 
-(defn expt [x p]
-  (Math/pow x p))
+(defn sq [x]
+  (* x x))
 
 (defn somef [f]
   (fn [x & args]

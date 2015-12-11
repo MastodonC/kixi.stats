@@ -10,40 +10,32 @@
 (def test-opts {:num-tests 100
                 :par       4})
 
-(defn approx=
-  "Equal to within err fraction, or if one is zero, to within err absolute."
-  ([err x y]
-   (or (= x y)
-       (if (or (zero? x) (zero? y))
-         (< (- err) (- x y) err)
-         (< (- 1 err) (/ x y) (+ 1 err)))))
-  ([err x y & more]
-   (->> more
-        (cons y)
-        (every? (partial approx= err x)))))
-
-(def =ish
-  "Almost equal"
-  (partial approx= 1/1000))
-
 (defn mean'
   [coll]
-  (assert (not (empty? coll)))
-  (/ (reduce + coll) (count coll)))
+  (let [c (count coll)]
+    (when (pos? c)
+      (/ (reduce + coll) c))))
 
 (defn variance'
   [coll]
-  (/ (->> coll
-          (map #(expt (- % (mean' coll)) 2))
-          (reduce +))
-     (max (dec (count coll)) 1)))
+  (let [c (count coll)]
+    (when (pos? c)
+      (let [c' (dec c)]
+        (if (pos? c')
+          (/ (->> coll
+                  (map #(sq (- % (mean' coll))))
+                  (reduce +))
+             c')
+          0)))))
 
 (defn pvariance'
   [coll]
-  (/ (->> coll
-          (map #(expt (- % (mean' coll)) 2))
-          (reduce +))
-     (max (count coll))))
+  (let [c (count coll)]
+    (when (pos? c)
+      (/ (->> coll
+              (map #(sq (- % (mean' coll))))
+              (reduce +))
+         (count coll)))))
 
 (defn covariance'
   [fx fy coll]
@@ -52,10 +44,10 @@
       nil
       (let [mean-x (mean' (map fx coll))
             mean-y (mean' (map fy coll))]
-        (double (/ (reduce + (map #(* (- (fx %) mean-x)
-                                      (- (fy %) mean-y))
-                                  coll))
-                   (count coll)))))))
+        (/ (reduce + (map #(* (- (fx %) mean-x)
+                              (- (fy %) mean-y))
+                          coll))
+           (count coll))))))
 
 (defn correlation'
   [fx fy coll]
@@ -78,43 +70,75 @@
 (defspec mean-spec
   test-opts
   (prop/for-all [ints (gen/such-that not-empty (gen/vector gen/int))]
-                (is (== (transduce identity mean ints)
-                        (mean' ints)))))
+                (is (= (transduce identity mean ints)
+                       (mean' ints)))))
+
+(deftest mean-test
+  (is (nil? (transduce identity mean []))))
 
 (defspec variance-spec
   test-opts
   (prop/for-all [ints (gen/such-that not-empty (gen/vector gen/int))]
-                (=ish (transduce identity variance ints)
-                      (variance' ints))))
+                (is (= (transduce identity variance ints)
+                       (variance' ints)))))
+
+(deftest variance-test
+  (is (nil?  (transduce identity variance [])))
+  (is (zero? (transduce identity variance [1])))
+  (is (= 2   (transduce identity variance [1 3])))
+  (is (= 4   (transduce identity variance [1 3 5]))))
 
 (defspec pvariance-spec
   test-opts
-  (prop/for-all [ints (gen/such-that not-empty (gen/vector gen/int))]
-                (=ish (transduce identity pvariance ints)
-                      (pvariance' ints))))
+  (prop/for-all [ints (gen/vector gen/int)]
+                (is (= (transduce identity pvariance ints)
+                       (pvariance' ints)))))
+
+(deftest pvariance-test
+  (is (nil?  (transduce identity pvariance [])))
+  (is (zero? (transduce identity pvariance [1])))
+  (is (= 4   (transduce identity pvariance [1 5]))))
 
 (defspec standard-deviation-spec
   test-opts
-  (prop/for-all [ints (gen/such-that not-empty (gen/vector gen/int))]
-                (=ish (transduce identity standard-deviation ints)
-                      (sqrt (variance' ints)))))
+  (prop/for-all [ints (gen/vector gen/int)]
+                (is (= (transduce identity standard-deviation ints)
+                       (some-> (variance' ints) sqrt)))))
+
+(deftest standard-deviation-test
+  (is (nil?  (transduce identity standard-deviation [])))
+  (is (zero? (transduce identity standard-deviation [1])))
+  (is (== 2  (transduce identity standard-deviation [1 3 5]))))
 
 (defspec pstandard-deviation-spec
   test-opts
-  (prop/for-all [ints (gen/such-that not-empty (gen/vector gen/int))]
-                (=ish (transduce identity pstandard-deviation ints)
-                      (sqrt (pvariance' ints)))))
+  (prop/for-all [ints (gen/vector gen/int)]
+                (is (= (transduce identity pstandard-deviation ints)
+                       (some-> (pvariance' ints) sqrt)))))
+
+(deftest pstandard-deviation-test
+  (is (nil?  (transduce identity pstandard-deviation [])))
+  (is (zero? (transduce identity pstandard-deviation [1])))
+  (is (== 2  (transduce identity pstandard-deviation [1 5]))))
 
 (defspec covariance-spec
   test-opts
-  ; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute covariance
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute covariance
   (prop/for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
                 (is (= (transduce identity (covariance :x :y) coll)
                        (covariance' :x :y coll)))))
 
+(deftest covariance-test
+  (is (nil?  (transduce identity (covariance :x :y) [])))
+  (is (zero? (transduce identity (covariance :x :y) [{:x 1 :y 2}]))))
+
 (defspec correlation-spec
   test-opts
-  ; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
   (prop/for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
                 (is (= (transduce identity (correlation :x :y) coll)
                        (correlation' :x :y coll)))))
+
+(deftest correlation-test
+  (is (nil? (transduce identity (correlation :x :y) [])))
+  (is (nil? (transduce identity (correlation :x :y) [{:x 1 :y 2}]))))

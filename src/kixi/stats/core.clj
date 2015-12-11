@@ -7,7 +7,8 @@
   ([[s c] e]
    [(+ s e) (inc c)])
   ([[s c]]
-   (double (/ s (max 1 c)))))
+   (when-not (zero? c)
+     (/ s c))))
 
 (defn variance
   "Estimates an unbiased variance of numeric inputs."
@@ -17,12 +18,16 @@
          m' (+ m (/ (- e m) c'))]
      [c' m' (+ ss (* (- e m') (- e m)))]))
   ([[c m ss]]
-   (/ ss (max 1 (dec c)))))
+   (when-not (zero? c)
+     (let [c' (dec c)]
+       (if (pos? c')
+         (/ ss c') 0)))))
 
 (def pvariance
   "Calculates the population variance of numeric inputs."
   (completing variance (fn [[c _ ss]]
-                         (when-not (zero? c) (/ ss c)))))
+                         (when-not (zero? c)
+                           (/ ss c)))))
 
 (def standard-deviation
   "Estimates the sample standard deviation of numeric inputs."
@@ -54,7 +59,7 @@
             (+ ss (* (- x mx') (- y my)))]))))
     ([[c _ _ ss]]
      (when-not (zero? c)
-       (double (/ ss c))))))
+       (/ ss c)))))
 
 (defn correlation
   "Given two functions: (fx input) and (fy input), each of which returns a
@@ -74,8 +79,8 @@
                mx' (+ mx (/ (- x mx) c'))
                my' (+ my (/ (- y my) c'))]
            [c' mx' my'
-            (+ ssx (* (- x mx') (- x mx)))
-            (+ ssy (* (- y my') (- y my)))
+            (+ ssx  (* (- x mx') (- x mx)))
+            (+ ssy  (* (- y my') (- y my)))
             (+ ssxy (* (- x mx') (- y my)))]))))
     ([[c mx my ssx ssy ssxy]]
      (let [d (sqrt (* ssx ssy))]
