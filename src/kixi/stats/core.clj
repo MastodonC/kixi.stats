@@ -1,5 +1,12 @@
 (ns kixi.stats.core
+  (:refer-clojure :exclude [count])
   (:require [kixi.stats.utils :refer :all]))
+
+(defn count
+  "Calculates the count of inputs."
+  ([] 0)
+  ([n _] (inc n))
+  ([n] n))
 
 (defn mean
   "Calculates the arithmetic mean of numeric inputs."

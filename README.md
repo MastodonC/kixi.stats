@@ -2,6 +2,7 @@
 
 A Clojure library of statistical transducing functions. Currently implemented:
 
+* Count
 * Mean
 * Variance
 * Population variance

@@ -1,4 +1,5 @@
 (ns kixi.stats.core-test
+  (:refer-clojure :rename {count count'})
   (:require [kixi.stats.core :refer :all]
             [kixi.stats.utils :refer :all]
             [clojure.test :refer :all]
@@ -12,13 +13,13 @@
 
 (defn mean'
   [coll]
-  (let [c (count coll)]
+  (let [c (count' coll)]
     (when (pos? c)
       (/ (reduce + coll) c))))
 
 (defn variance'
   [coll]
-  (let [c (count coll)]
+  (let [c (count' coll)]
     (when (pos? c)
       (let [c' (dec c)]
         (if (pos? c')
@@ -30,12 +31,12 @@
 
 (defn pvariance'
   [coll]
-  (let [c (count coll)]
+  (let [c (count' coll)]
     (when (pos? c)
       (/ (->> coll
               (map #(sq (- % (mean' coll))))
               (reduce +))
-         (count coll)))))
+         (count' coll)))))
 
 (defn covariance'
   [fx fy coll]
@@ -47,7 +48,7 @@
         (/ (reduce + (map #(* (- (fx %) mean-x)
                               (- (fy %) mean-y))
                           coll))
-           (count coll))))))
+           (count' coll))))))
 
 (defn correlation'
   [fx fy coll]
@@ -67,9 +68,25 @@
           (catch ArithmeticException e
             nil))))))
 
+(defn finite?
+  [x]
+  (Double/isFinite x))
+
+(def numerics
+  (gen/such-that finite? (gen/one-of [gen/int gen/double])))
+
+(defspec count-spec
+  test-opts
+  (prop/for-all [coll (gen/vector numerics)]
+                (is (= (transduce identity count coll)
+                       (count' coll)))))
+
+(deftest count-spec
+  (is (zero? (transduce identity count []))))
+
 (defspec mean-spec
   test-opts
-  (prop/for-all [ints (gen/such-that not-empty (gen/vector gen/int))]
+  (prop/for-all [ints (gen/vector numerics)]
                 (is (= (transduce identity mean ints)
                        (mean' ints)))))
 
@@ -78,7 +95,7 @@
 
 (defspec variance-spec
   test-opts
-  (prop/for-all [ints (gen/such-that not-empty (gen/vector gen/int))]
+  (prop/for-all [ints (gen/vector gen/int)]
                 (is (= (transduce identity variance ints)
                        (variance' ints)))))
 
