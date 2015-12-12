@@ -1,7 +1,8 @@
 (ns kixi.stats.utils)
 
 (defn sqrt [x]
-  (Math/sqrt x))
+  #?(:clj  (Math/sqrt x)
+     :cljs (js/Math.sqrt x)))
 
 (defn sq [x]
   (* x x))

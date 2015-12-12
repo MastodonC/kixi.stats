@@ -1,6 +1,6 @@
 (ns kixi.stats.core
-  (:refer-clojure :exclude [count])
-  (:require [kixi.stats.utils :refer :all]))
+  (:require [kixi.stats.utils :refer [sqrt somef post-complete]])
+  (:refer-clojure :exclude [count]))
 
 (defn count
   "Calculates the count of inputs."

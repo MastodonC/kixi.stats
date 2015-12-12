@@ -1,6 +1,6 @@
 # kixi.stats
 
-A Clojure library of statistical transducing functions. Currently implemented:
+A Clojure/ClojureScript library of statistical transducing functions. Currently implemented:
 
 * Count
 * Mean
