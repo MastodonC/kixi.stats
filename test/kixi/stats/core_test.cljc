@@ -32,6 +32,9 @@
   "Almost equal"
   (partial approx= 0.0000001))
 
+(defn each? [pred & colls]
+  (not-any? false? (apply map pred colls)))
+
 (defn mean'
   [coll]
   (let [c (count coll)]
@@ -86,6 +89,20 @@
                          (reduce + (map * mys mys))))]
           (when-not (zero? d)
             (/ (reduce + (map * mxs mys)) d)))))))
+
+(defn simple-linear-regression'
+  [fx fy coll]
+  (let [coll' (filter fx (filter fy coll))]
+    (when-not (empty? coll')
+      (let [xs (map fx coll')
+            ys (map fy coll')
+            mx (mean' xs)
+            my (mean' ys)
+            vx (pvariance' xs)
+            vxy (covariance' fx fy coll')]
+        (when-not (zero? vx)
+          (let [slope (/ vxy vx)]
+            [(- my (* mx slope)) slope]))))))
 
 (defn finite?
   [x]
@@ -179,3 +196,15 @@
 (deftest correlation-test
   (is (nil? (transduce identity (kixi/correlation :x :y) [])))
   (is (nil? (transduce identity (kixi/correlation :x :y) [{:x 1 :y 2}]))))
+
+(defspec simple-linear-regression-spec
+  test-opts
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+           (is (each? =ish
+                      (transduce identity (kixi/simple-linear-regression :x :y) coll)
+                      (simple-linear-regression' :x :y coll)))))
+
+(deftest simple-linear-regression-test
+  (is (nil? (transduce identity (kixi/simple-linear-regression :x :y) [])))
+  (is (nil? (transduce identity (kixi/simple-linear-regression :x :y) [{:x 1 :y 2}]))))

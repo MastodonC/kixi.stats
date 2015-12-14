@@ -93,3 +93,29 @@
      (let [d (sqrt (* ssx ssy))]
        (when-not (zero? d)
          (/ ssxy d))))))
+
+(defn simple-linear-regression
+  "Given two functions: (fx input) and (fy input), each of which returns a
+  number, calculates a least squares linear model between fx and fy over inputs.
+  Returns a vector containing the coefficients: offset and slope.
+  Ignores any records with fx or fy are nil. If there are no records with
+  values for fx and fy, the linear relationship is nil. See
+  https://en.wikipedia.org/wiki/Simple_linear_regression."
+  [fx fy]
+  (fn
+    ([] [0 0 0 0 0])
+    ([[c mx my ssx ssxy :as acc] e]
+     (let [x (fx e)
+           y (fy e)]
+       (if (or (nil? x) (nil? y))
+         acc
+         (let [c'  (inc c)
+               mx' (+ mx (/ (- x mx) c'))
+               my' (+ my (/ (- y my) c'))]
+           [c' mx' my'
+            (+ ssx  (* (- x mx') (- x mx)))
+            (+ ssxy (* (- x mx') (- y my)))]))))
+    ([[_ mx my ssx ssxy]]
+     (when-not (zero? ssx)
+       (let [b (/ ssxy ssx)]
+         [(- my (* mx b)) b])))))
