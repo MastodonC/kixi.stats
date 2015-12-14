@@ -17,12 +17,12 @@ A Clojure/ClojureScript library of statistical transducing functions. Currently 
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.1.0"]
+[kixi/stats "0.1.1"]
 ```
 
 ## Usage
 
-[kixi.stats.core](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/core.clj) contains statistical reducing functions that can be used with `transduce`:
+[kixi.stats.core](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/core.cljc) contains statistical reducing functions that can be used with `transduce`:
 
 ```clojure
 (require '[kixi.stats.core :refer [standard-deviation correlation])
