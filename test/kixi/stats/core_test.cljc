@@ -3,7 +3,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [kixi.stats.core :as kixi]
-            [kixi.stats.utils :refer [sq sqrt]]
+            [kixi.stats.utils :refer [sq pow sqrt]]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :refer-macros [for-all]]
@@ -20,6 +20,7 @@
   "Equal to within err fraction, or if one is zero, to within err absolute."
   ([err x y]
    (or (= x y)
+       (== x y)
        (if (or (zero? x) (zero? y))
          (< (- err) (- x y) err)
          (< (- 1 err) (/ x y) (+ 1 err)))))
@@ -104,6 +105,25 @@
           (let [slope (/ vxy vx)]
             [(- my (* mx slope)) slope]))))))
 
+(defn skewness'
+  [coll]
+  (let [m (mean' coll)
+        n (count coll)
+        d (* (pow (reduce + (map #(pow (- % m) 2) coll)) 1.5)
+             (- n 2))]
+    (when-not (zero? d)
+      (/ (* (reduce + (map #(pow (- % m) 3) coll))
+            (* n (sqrt (dec n))))
+         d))))
+
+(defn pskewness'
+  [coll]
+  (let [m (mean' coll)
+        v (pvariance' coll)]
+    (when-not (or (nil? v) (zero? v))
+      (let [s (sqrt v)]
+        (mean' (map #(pow (/ (- % m) s) 3) coll))))))
+
 (defn finite?
   [x]
   #?(:clj  (Double/isFinite x)
@@ -174,6 +194,28 @@
   (is (nil?  (transduce identity kixi/pstandard-deviation [])))
   (is (zero? (transduce identity kixi/pstandard-deviation [1])))
   (is (== 2  (transduce identity kixi/pstandard-deviation [1 5]))))
+
+(defspec skewness-spec
+  test-opts
+  (for-all [xs (gen/vector gen/int)]
+           (is (=ish (transduce identity kixi/skewness xs)
+                     (skewness' xs)))))
+
+(deftest skewness-test
+  (is (nil? (transduce identity kixi/skewness [])))
+  (is (nil? (transduce identity kixi/skewness [1])))
+  (is (nil? (transduce identity kixi/skewness [1 2]))))
+
+(defspec pskewness-spec
+  test-opts
+  (for-all [xs (gen/vector gen/int)]
+           (is (=ish (transduce identity kixi/pskewness xs)
+                     (pskewness' xs)))))
+
+(deftest pskewness-test
+  (is (nil?  (transduce identity kixi/pskewness [])))
+  (is (nil?  (transduce identity kixi/pskewness [1])))
+  (is (zero? (transduce identity kixi/pskewness [1 2]))))
 
 (defspec covariance-spec
   test-opts

@@ -1,5 +1,5 @@
 (ns kixi.stats.core
-  (:require [kixi.stats.utils :refer [sqrt somef post-complete]])
+  (:require [kixi.stats.utils :refer [sq sqrt pow somef post-complete]])
   (:refer-clojure :exclude [count]))
 
 (defn count
@@ -43,6 +43,34 @@
 (def pstandard-deviation
   "Calculates the population standard deviation of numeric inputs."
   (post-complete pvariance (somef sqrt)))
+
+(defn skewness
+  "Estimates the sample skewness of numeric inputs.
+  See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance."
+  ([] [0 0 0 0])
+  ([[c m1 m2 m3] e]
+   (let [c'  (inc c)
+         d   (- e m1)
+         dc  (/ d c')
+         m1' (+ m1 dc)
+         m2' (+ m2 (* (sq d) (/ c c')))
+         m3' (+ m3
+                (* (pow d 3) (/ (* (- c' 1) (- c' 2)) (sq c')))
+                (* -3 m2 dc))]
+     [c' m1' m2' m3']))
+  ([[c _ m2 m3]]
+   (let [d (* (pow m2 1.5) (- c 2))]
+     (when-not (zero? d)
+       (/ (* (sqrt (dec c)) m3 c) d)))))
+
+(def pskewness
+  "Calculates the population skewness of numeric inputs.
+  See: http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
+  (completing skewness
+              (fn [[c _ m2 m3]]
+                (let [d (pow m2 1.5)]
+                  (when-not (zero? d)
+                    (/ (* (sqrt c) m3) d))))))
 
 (defn covariance
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which

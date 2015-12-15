@@ -7,6 +7,10 @@
 (defn sq [x]
   (* x x))
 
+(defn pow [x n]
+  #?(:clj  (Math/pow x n)
+     :cljs (js/Math.pow x n)))
+
 (defn somef [f]
   (fn [x & args]
     (when-not (nil? x)
