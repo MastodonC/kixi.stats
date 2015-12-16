@@ -9,6 +9,7 @@ A Clojure/ClojureScript library of statistical transducing functions. Currently 
 * Standard deviation
 * Population standard deviation
 * Skewness
+* Kurtosis
 * Covariance
 * Correlation
 * Simple linear regression

@@ -55,7 +55,7 @@
          m1' (+ m1 dc)
          m2' (+ m2 (* (sq d) (/ c c')))
          m3' (+ m3
-                (* (pow d 3) (/ (* (- c' 1) (- c' 2)) (sq c')))
+                (/ (* (pow d 3) (- c' 1) (- c' 2)) (sq c'))
                 (* -3 m2 dc))]
      [c' m1' m2' m3']))
   ([[c _ m2 m3]]
@@ -71,6 +71,34 @@
                 (let [d (pow m2 1.5)]
                   (when-not (zero? d)
                     (/ (* (sqrt c) m3) d))))))
+
+(defn kurtosis
+  "Estimates the sample kurtosis of numeric inputs.
+  See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+  and http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
+  ([] [0 0 0 0 0])
+  ([[c m1 m2 m3 m4] e]
+   (let [c'  (inc c)
+         d   (- e m1)
+         dc  (/ d c')
+         m1' (+ m1 dc)
+         m2' (+ m2 (* (sq d) (/ c c')))
+         m3' (+ m3
+                (/ (* (pow d 3) (- c' 1) (- c' 2)) (sq c'))
+                (* -3 m2 dc))
+         m4' (+ m4
+                (/ (* (pow d 4) (- c' 1) (+ (sq c') (* -3 c') 3))
+                   (pow c' 3))
+                (* 6 m2 (sq dc))
+                (* -4 m3 dc))]
+     [c' m1' m2' m3' m4']))
+  ([[c _ m2 _ m4]]
+   (when-not (or (zero? m2) (< c 4))
+     (let [v (/ m2 (dec c))]
+       (- (/ (* c (inc c) m4)
+             (* (- c 1) (- c 2) (- c 3) (sq v)))
+          (/ (* 3 (sq (dec c)))
+             (* (- c 2) (- c 3))))))))
 
 (defn covariance
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which

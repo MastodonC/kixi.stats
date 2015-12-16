@@ -124,6 +124,17 @@
       (let [s (sqrt v)]
         (mean' (map #(pow (/ (- % m) s) 3) coll))))))
 
+(defn kurtosis'
+  [coll]
+  (let [m (mean' coll)
+        n (count coll)
+        v (variance' coll)]
+    (when-not (or (nil? v) (zero? v) (< n 4))
+      (- (/ (* n (inc n) (reduce + (map #(pow (- % m) 4) coll)))
+            (* (- n 1) (- n 2) (- n 3) (pow v 2)))
+         (/ (* 3 (sq (dec n)))
+            (* (- n 2) (- n 3)))))))
+
 (defn finite?
   [x]
   #?(:clj  (Double/isFinite x)
@@ -216,6 +227,18 @@
   (is (nil?  (transduce identity kixi/pskewness [])))
   (is (nil?  (transduce identity kixi/pskewness [1])))
   (is (zero? (transduce identity kixi/pskewness [1 2]))))
+
+(defspec kurtosis-spec
+  test-opts
+  (for-all [xs (gen/vector gen/int)]
+           (is (=ish (transduce identity kixi/kurtosis xs)
+                     (kurtosis' xs)))))
+
+(deftest kurtosis-test
+  (is (nil? (transduce identity kixi/kurtosis [])))
+  (is (nil? (transduce identity kixi/kurtosis [1])))
+  (is (nil? (transduce identity kixi/kurtosis [1 2])))
+  (is (nil? (transduce identity kixi/kurtosis [1 2 3]))))
 
 (defspec covariance-spec
   test-opts
