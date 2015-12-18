@@ -100,6 +100,14 @@
           (/ (* 3 (sq (dec c)))
              (* (- c 2) (- c 3))))))))
 
+(def pkurtosis
+  "Calculates the population kurtosis of numeric inputs.
+  See http://www.macroption.com/kurtosis-formula/"
+  (completing kurtosis (fn [[c _ m2 _ m4]]
+                         (when-not (zero? m2)
+                           (- (/ (* c m4)
+                                 (sq m2)) 3)))))
+
 (defn covariance
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which
   returns a number, estimates the unbiased covariance of those functions over

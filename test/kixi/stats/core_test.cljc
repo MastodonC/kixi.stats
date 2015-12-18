@@ -135,6 +135,16 @@
          (/ (* 3 (sq (dec n)))
             (* (- n 2) (- n 3)))))))
 
+(defn pkurtosis'
+  [coll]
+  (let [m (mean' coll)
+        n (count coll)
+        d (reduce + (map #(sq (- % m)) coll))]
+    (when-not (zero? d)
+      (- (/ (* n (reduce + (map #(pow (- % m) 4) coll)))
+            (sq d))
+         3))))
+
 (defn finite?
   [x]
   #?(:clj  (Double/isFinite x)
@@ -238,7 +248,19 @@
   (is (nil? (transduce identity kixi/kurtosis [])))
   (is (nil? (transduce identity kixi/kurtosis [1])))
   (is (nil? (transduce identity kixi/kurtosis [1 2])))
-  (is (nil? (transduce identity kixi/kurtosis [1 2 3]))))
+  (is (nil? (transduce identity kixi/kurtosis [1 2 3])))
+  (is (not (nil? (transduce identity kixi/kurtosis [1 2 3 4])))))
+
+(defspec pkurtosis-spec
+  test-opts
+  (for-all [xs (gen/vector gen/int)]
+           (is (=ish (transduce identity kixi/pkurtosis xs)
+                     (pkurtosis' xs)))))
+
+(deftest pkurtosis-test
+  (is (nil? (transduce identity kixi/pkurtosis [])))
+  (is (nil? (transduce identity kixi/pkurtosis [1])))
+  (is (not (nil? (transduce identity kixi/pkurtosis [1 2])))))
 
 (defspec covariance-spec
   test-opts
