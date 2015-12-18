@@ -19,7 +19,7 @@ Variance, standard deviation, skewness and kurtosis each have sample and populat
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.1.1"]
+[kixi/stats "0.1.2"]
 ```
 
 ## Usage
