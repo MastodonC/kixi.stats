@@ -9,7 +9,11 @@
                              [org.clojure/test.check "0.9.0"]
                              [doo "0.1.6"]]
               :plugins [[lein-cljsbuild "1.1.1"]
+                        [lein-codox "0.9.0"]
                         [lein-doo "0.1.6"]]}}
+  :codox {:namespaces [kixi.stats.core]
+          :project {:name "kixi.stats"}
+          :source-uri "https://github.com/MastodonC/kixi.stats/blob/v0.1.2/{filepath}#L{line}"}
   :cljsbuild
   {:builds
    {:test {:source-paths ["src" "test"]

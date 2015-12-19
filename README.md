@@ -14,6 +14,10 @@ A Clojure/ClojureScript library of statistical transducing functions. Currently 
 
 Variance, standard deviation, skewness and kurtosis each have sample and population variants.
 
+## Documentation
+
+View the [documentation here](http://mastodonc.github.io/kixi.stats/).
+
 ## Installation
 
 Add the following dependency:
