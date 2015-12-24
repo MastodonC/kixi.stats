@@ -9,7 +9,9 @@ A Clojure/ClojureScript library of statistical transducing functions. Currently 
 * Skewness
 * Kurtosis
 * Covariance
+* Covariance matrix
 * Correlation
+* Correlation matrix
 * Simple linear regression
 
 Variance, standard deviation, skewness and kurtosis each have sample and population variants.
@@ -42,6 +44,12 @@ Add the following dependency:
       (transduce identity (correlation :x :y)))
 
 ;; => -1.0
+
+(->> [{:x 1 :y 3 :z 2} {:x 2 :y 2 :z 4} {:x 3 :y 1 :z 6}]
+     (transduce identity (correlation-matrix {:x :x :y :y :z :z})))
+
+;; => {[:x :y] -1.0, [:x :z] 1.0, [:y :z] -1.0,
+;;     [:y :x] -1.0, [:z :x] 1.0, [:z :y] -1.0}
 ```
 
 ## References

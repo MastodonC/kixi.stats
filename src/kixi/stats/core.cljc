@@ -1,5 +1,6 @@
 (ns kixi.stats.core
-  (:require [kixi.stats.utils :refer [sq sqrt pow somef post-complete]])
+  (:require [kixi.stats.utils :refer [sq sqrt pow somef post-complete]]
+            [redux.core :refer [fuse-matrix]])
   (:refer-clojure :exclude [count]))
 
 (def count
@@ -137,6 +138,23 @@
      (when-not (zero? c)
        (/ ss c)))))
 
+(defn covariance-matrix
+  "Given a map of key names to functions that extract values for those keys
+  from an input, computes the covariance for each of the n^2 key pairs.
+  For example:
+
+      (covariance-matrix {:name-length #(.length (:name %))
+                          :age         :age
+                          :num-cats    (comp count :cats)})
+
+  will, when reduced, return a map like:
+
+      {[:name-length :age]      0.56
+       [:name-length :num-cats] 0.95
+       ...}"
+  [kvs]
+  (fuse-matrix covariance kvs))
+
 (defn correlation
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, estimates the unbiased linear correlation coefficient between fx and
@@ -162,6 +180,23 @@
      (let [d (sqrt (* ssx ssy))]
        (when-not (zero? d)
          (/ ssxy d))))))
+
+(defn correlation-matrix
+  "Given a map of key names to functions that extract values for those keys
+  from an input, computes the correlation for each of the n^2 key pairs.
+  For example:
+
+      (correlation-matrix {:name-length #(.length (:name %))
+                           :age         :age
+                           :num-cats    (comp count :cats)})
+
+  will, when reduced, return a map like:
+
+      {[:name-length :age]      0.56
+       [:name-length :num-cats] 0.95
+       ...}"
+  [kvs]
+  (fuse-matrix correlation kvs))
 
 (defn simple-linear-regression
   "Given two functions: (fx input) and (fy input), each of which returns a

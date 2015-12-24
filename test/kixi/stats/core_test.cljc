@@ -75,6 +75,15 @@
                           coll'))
            (count coll'))))))
 
+(defn covariance-matrix'
+  [coll]
+  {[:x :y] (covariance' :x :y coll)
+   [:x :z] (covariance' :x :z coll)
+   [:y :z] (covariance' :y :z coll)
+   [:y :x] (covariance' :y :x coll)
+   [:z :x] (covariance' :z :x coll)
+   [:z :y] (covariance' :z :y coll)})
+
 (defn correlation'
   [fx fy coll]
   "http://mathworld.wolfram.com/CorrelationCoefficient.html"
@@ -90,6 +99,15 @@
                          (reduce + (map * mys mys))))]
           (when-not (zero? d)
             (/ (reduce + (map * mxs mys)) d)))))))
+
+(defn correlation-matrix'
+  [coll]
+  {[:x :y] (correlation' :x :y coll)
+   [:x :z] (correlation' :x :z coll)
+   [:y :z] (correlation' :y :z coll)
+   [:y :x] (correlation' :y :x coll)
+   [:z :x] (correlation' :z :x coll)
+   [:z :y] (correlation' :z :y coll)})
 
 (defn simple-linear-regression'
   [fx fy coll]
@@ -273,6 +291,13 @@
   (is (nil?  (transduce identity (kixi/covariance :x :y) [])))
   (is (zero? (transduce identity (kixi/covariance :x :y) [{:x 1 :y 2}]))))
 
+(defspec covariance-matrix-spec
+  test-opts
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
+           (is (= (transduce identity (kixi/covariance-matrix {:x :x :y :y :z :z}) coll)
+                  (covariance-matrix' coll)))))
+
 (defspec correlation-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
@@ -283,6 +308,13 @@
 (deftest correlation-test
   (is (nil? (transduce identity (kixi/correlation :x :y) [])))
   (is (nil? (transduce identity (kixi/correlation :x :y) [{:x 1 :y 2}]))))
+
+(defspec correlation-matrix-spec
+  test-opts
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
+           (is (= (transduce identity (kixi/correlation-matrix {:x :x :y :y :z :z}) coll)
+                  (correlation-matrix' coll)))))
 
 (defspec simple-linear-regression-spec
   test-opts
