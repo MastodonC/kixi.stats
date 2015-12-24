@@ -52,6 +52,8 @@ Add the following dependency:
 ;;     [:y :x] -1.0, [:z :x] 1.0, [:z :y] -1.0}
 ```
 
+If you have multiple statistics to calculate over the same collection, take a look at the reducing function combinators available in [redux](https://github.com/henrygarner/redux). Redux' `fuse` will return a higher-order reducing function that can be used to execute an arbitrary number of reducing functions simultaneously.
+
 ## References
 
 Strongly influenced by [Tesser](https://github.com/aphyr/tesser).
