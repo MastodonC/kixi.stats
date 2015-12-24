@@ -192,93 +192,93 @@
 (defspec variance-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
-           (is (=ish (transduce identity kixi/variance xs)
+           (is (=ish (transduce identity kixi/variance-s xs)
                      (variance' xs)))))
 
 (deftest variance-test
-  (is (nil?  (transduce identity kixi/variance [])))
-  (is (zero? (transduce identity kixi/variance [1])))
-  (is (= 2   (transduce identity kixi/variance [1 3])))
-  (is (= 4   (transduce identity kixi/variance [1 3 5]))))
+  (is (nil?  (transduce identity kixi/variance-s [])))
+  (is (zero? (transduce identity kixi/variance-s [1])))
+  (is (= 2   (transduce identity kixi/variance-s [1 3])))
+  (is (= 4   (transduce identity kixi/variance-s [1 3 5]))))
 
 (defspec pvariance-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
-           (is (=ish (transduce identity kixi/pvariance xs)
+           (is (=ish (transduce identity kixi/variance-p xs)
                      (pvariance' xs)))))
 
 (deftest pvariance-test
-  (is (nil?  (transduce identity kixi/pvariance [])))
-  (is (zero? (transduce identity kixi/pvariance [1])))
-  (is (= 4   (transduce identity kixi/pvariance [1 5]))))
+  (is (nil?  (transduce identity kixi/variance-p [])))
+  (is (zero? (transduce identity kixi/variance-p [1])))
+  (is (= 4   (transduce identity kixi/variance-p [1 5]))))
 
 (defspec standard-deviation-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
-           (is (=ish (transduce identity kixi/standard-deviation xs)
+           (is (=ish (transduce identity kixi/standard-deviation-s xs)
                      (some-> (variance' xs) sqrt)))))
 
 (deftest standard-deviation-test
-  (is (nil?  (transduce identity kixi/standard-deviation [])))
-  (is (zero? (transduce identity kixi/standard-deviation [1])))
-  (is (== 2  (transduce identity kixi/standard-deviation [1 3 5]))))
+  (is (nil?  (transduce identity kixi/standard-deviation-s [])))
+  (is (zero? (transduce identity kixi/standard-deviation-s [1])))
+  (is (== 2  (transduce identity kixi/standard-deviation-s [1 3 5]))))
 
 (defspec pstandard-deviation-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
-           (is (=ish (transduce identity kixi/pstandard-deviation xs)
+           (is (=ish (transduce identity kixi/standard-deviation-p xs)
                      (some-> (pvariance' xs) sqrt)))))
 
 (deftest pstandard-deviation-test
-  (is (nil?  (transduce identity kixi/pstandard-deviation [])))
-  (is (zero? (transduce identity kixi/pstandard-deviation [1])))
-  (is (== 2  (transduce identity kixi/pstandard-deviation [1 5]))))
+  (is (nil?  (transduce identity kixi/standard-deviation-p [])))
+  (is (zero? (transduce identity kixi/standard-deviation-p [1])))
+  (is (== 2  (transduce identity kixi/standard-deviation-p [1 5]))))
 
 (defspec skewness-spec
   test-opts
   (for-all [xs (gen/vector gen/int)]
-           (is (=ish (transduce identity kixi/skewness xs)
+           (is (=ish (transduce identity kixi/skewness-s xs)
                      (skewness' xs)))))
 
 (deftest skewness-test
-  (is (nil? (transduce identity kixi/skewness [])))
-  (is (nil? (transduce identity kixi/skewness [1])))
-  (is (nil? (transduce identity kixi/skewness [1 2]))))
+  (is (nil? (transduce identity kixi/skewness-s [])))
+  (is (nil? (transduce identity kixi/skewness-s [1])))
+  (is (nil? (transduce identity kixi/skewness-s [1 2]))))
 
 (defspec pskewness-spec
   test-opts
   (for-all [xs (gen/vector gen/int)]
-           (is (=ish (transduce identity kixi/pskewness xs)
+           (is (=ish (transduce identity kixi/skewness-p xs)
                      (pskewness' xs)))))
 
 (deftest pskewness-test
-  (is (nil?  (transduce identity kixi/pskewness [])))
-  (is (nil?  (transduce identity kixi/pskewness [1])))
-  (is (zero? (transduce identity kixi/pskewness [1 2]))))
+  (is (nil?  (transduce identity kixi/skewness-p [])))
+  (is (nil?  (transduce identity kixi/skewness-p [1])))
+  (is (zero? (transduce identity kixi/skewness-p [1 2]))))
 
 (defspec kurtosis-spec
   test-opts
   (for-all [xs (gen/vector gen/int)]
-           (is (=ish (transduce identity kixi/kurtosis xs)
+           (is (=ish (transduce identity kixi/kurtosis-s xs)
                      (kurtosis' xs)))))
 
 (deftest kurtosis-test
-  (is (nil? (transduce identity kixi/kurtosis [])))
-  (is (nil? (transduce identity kixi/kurtosis [1])))
-  (is (nil? (transduce identity kixi/kurtosis [1 2])))
-  (is (nil? (transduce identity kixi/kurtosis [1 2 3])))
-  (is (not (nil? (transduce identity kixi/kurtosis [1 2 3 4])))))
+  (is (nil? (transduce identity kixi/kurtosis-s [])))
+  (is (nil? (transduce identity kixi/kurtosis-s [1])))
+  (is (nil? (transduce identity kixi/kurtosis-s [1 2])))
+  (is (nil? (transduce identity kixi/kurtosis-s [1 2 3])))
+  (is (not (nil? (transduce identity kixi/kurtosis-s [1 2 3 4])))))
 
 (defspec pkurtosis-spec
   test-opts
   (for-all [xs (gen/vector gen/int)]
-           (is (=ish (transduce identity kixi/pkurtosis xs)
+           (is (=ish (transduce identity kixi/kurtosis-p xs)
                      (pkurtosis' xs)))))
 
 (deftest pkurtosis-test
-  (is (nil? (transduce identity kixi/pkurtosis [])))
-  (is (nil? (transduce identity kixi/pkurtosis [1])))
-  (is (not (nil? (transduce identity kixi/pkurtosis [1 2])))))
+  (is (nil? (transduce identity kixi/kurtosis-p [])))
+  (is (nil? (transduce identity kixi/kurtosis-p [1])))
+  (is (not (nil? (transduce identity kixi/kurtosis-p [1 2])))))
 
 (defspec covariance-spec
   test-opts

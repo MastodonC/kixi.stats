@@ -20,7 +20,7 @@
      (when-not (zero? c)
        (/ s c)))))
 
-(def variance
+(def variance-s
   "Estimates an unbiased variance of numeric inputs."
   (fn
     ([] [0 0 0])
@@ -34,21 +34,29 @@
          (if (pos? c')
            (/ ss c') 0))))))
 
-(def pvariance
+(def variance
+  "Alias for variance-s."
+  variance-s)
+
+(def variance-p
   "Calculates the population variance of numeric inputs."
-  (completing variance (fn [[c _ ss]]
-                         (when-not (zero? c)
-                           (/ ss c)))))
+  (completing variance-s (fn [[c _ ss]]
+                           (when-not (zero? c)
+                             (/ ss c)))))
+
+(def standard-deviation-s
+  "Estimates the sample standard deviation of numeric inputs."
+  (post-complete variance-s (somef sqrt)))
 
 (def standard-deviation
-  "Estimates the sample standard deviation of numeric inputs."
-  (post-complete variance (somef sqrt)))
+  "Alias for standard-deviation-s."
+  standard-deviation-s)
 
-(def pstandard-deviation
+(def standard-deviation-p
   "Calculates the population standard deviation of numeric inputs."
-  (post-complete pvariance (somef sqrt)))
+  (post-complete variance-p (somef sqrt)))
 
-(def skewness
+(def skewness-s
   "Estimates the sample skewness of numeric inputs.
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance."
   (fn
@@ -68,16 +76,20 @@
        (when-not (zero? d)
          (/ (* (sqrt (dec c)) m3 c) d))))))
 
-(def pskewness
+(def skewness
+  "Alias for skewness-s."
+  skewness-s)
+
+(def skewness-p
   "Calculates the population skewness of numeric inputs.
   See: http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
-  (completing skewness
+  (completing skewness-s
               (fn [[c _ m2 m3]]
                 (let [d (pow m2 1.5)]
                   (when-not (zero? d)
                     (/ (* (sqrt c) m3) d))))))
 
-(def kurtosis
+(def kurtosis-s
   "Estimates the sample kurtosis of numeric inputs.
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
   and http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
@@ -106,13 +118,17 @@
             (/ (* 3 (sq (dec c)))
                (* (- c 2) (- c 3)))))))))
 
-(def pkurtosis
+(def kurtosis
+  "Alias for kurtosis-s."
+  kurtosis-s)
+
+(def kurtosis-p
   "Calculates the population kurtosis of numeric inputs.
   See http://www.macroption.com/kurtosis-formula/"
-  (completing kurtosis (fn [[c _ m2 _ m4]]
-                         (when-not (zero? m2)
-                           (- (/ (* c m4)
-                                 (sq m2)) 3)))))
+  (completing kurtosis-s (fn [[c _ m2 _ m4]]
+                           (when-not (zero? m2)
+                             (- (/ (* c m4)
+                                   (sq m2)) 3)))))
 
 (defn covariance
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which
