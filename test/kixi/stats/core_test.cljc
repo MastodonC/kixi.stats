@@ -19,11 +19,15 @@
 (defn approx=
   "Equal to within err fraction, or if one is zero, to within err absolute."
   ([err x y]
-   (or (= x y)
-       (== x y)
-       (if (or (zero? x) (zero? y))
-         (< (- err) (- x y) err)
-         (< (- 1 err) (/ x y) (+ 1 err)))))
+   (if (and (map? x) (map? y))
+     (->> (merge-with vector x y)
+          (vals)
+          (map #(apply approx= err %)))
+     (or (= x y)
+         (== x y)
+         (if (or (zero? x) (zero? y))
+           (< (- err) (- x y) err)
+           (< (- 1 err) (/ x y) (+ 1 err))))))
   ([err x y & more]
    (->> more
         (cons y)
@@ -295,8 +299,8 @@
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
-           (is (= (transduce identity (kixi/covariance-matrix {:x :x :y :y :z :z}) coll)
-                  (covariance-matrix' coll)))))
+           (is (=ish (transduce identity (kixi/covariance-matrix {:x :x :y :y :z :z}) coll)
+                     (covariance-matrix' coll)))))
 
 (defspec correlation-spec
   test-opts
@@ -313,8 +317,8 @@
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
-           (is (= (transduce identity (kixi/correlation-matrix {:x :x :y :y :z :z}) coll)
-                  (correlation-matrix' coll)))))
+           (is (=ish (transduce identity (kixi/correlation-matrix {:x :x :y :y :z :z}) coll)
+                     (correlation-matrix' coll)))))
 
 (defspec simple-linear-regression-spec
   test-opts
