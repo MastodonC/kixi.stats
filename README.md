@@ -25,7 +25,7 @@ View the [documentation here](http://mastodonc.github.io/kixi.stats/).
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.2.0"]
+[kixi/stats "0.2.1"]
 ```
 
 ## Usage
@@ -64,6 +64,6 @@ Strongly influenced by [Tesser](https://github.com/aphyr/tesser).
 
 ## License
 
-Copyright © 2015 Mastodon C Ltd
+Copyright © 2016 Mastodon C Ltd
 
 Distributed under the Eclipse Public License version 1.0.
