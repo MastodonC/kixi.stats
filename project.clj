@@ -1,9 +1,9 @@
-(defproject kixi/stats "0.2.1"
+(defproject kixi/stats "0.2.2-SNAPSHOT"
   :description "A library of statistical transducing functions"
   :url "https://github.com/mastodonc/kixi.stats"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[redux "0.1.2"]]
+  :dependencies [[redux "0.1.3"]]
   :profiles {:dev
              {:dependencies [[org.clojure/clojure "1.8.0"]
                              [org.clojure/clojurescript "1.8.40"]
