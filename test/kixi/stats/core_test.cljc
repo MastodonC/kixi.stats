@@ -172,8 +172,13 @@
   #?(:clj  (Double/isFinite x)
      :cljs (js/isFinite x)))
 
+(defn within? [min max]
+  (fn [x]
+    (<= min x max)))
+
 (def numeric
-  (gen/such-that finite? (gen/one-of [gen/int gen/double])))
+  (gen/such-that (every-pred finite? (within? -1e100 1e100))
+                 (gen/one-of [gen/int gen/double])))
 
 (defspec count-spec
   test-opts

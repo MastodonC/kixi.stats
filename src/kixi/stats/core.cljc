@@ -24,15 +24,15 @@
   "Estimates an unbiased variance of numeric inputs."
   (fn
     ([] [0 0 0])
-    ([[c m ss] e]
-     (let [c' (inc c)
-           m' (+ m (/ (- e m) c'))]
-       [c' m' (+ ss (* (- e m') (- e m)))]))
-    ([[c m ss]]
+    ([[c s ss] e]
+     [(inc c) (+ s e) (+ ss (* e e))])
+    ([[c s ss]]
      (when-not (zero? c)
        (let [c' (dec c)]
          (if (pos? c')
-           (/ ss c') 0))))))
+           (- (/ ss c')
+              (/ (sq s) c c'))
+           0))))))
 
 (def variance
   "Alias for variance-s."
@@ -40,9 +40,10 @@
 
 (def variance-p
   "Calculates the population variance of numeric inputs."
-  (completing variance-s (fn [[c _ ss]]
+  (completing variance-s (fn [[c s ss]]
                            (when-not (zero? c)
-                             (/ ss c)))))
+                             (- (/ ss c)
+                                (sq (/ s c)))))))
 
 (def standard-deviation-s
   "Estimates the sample standard deviation of numeric inputs."
