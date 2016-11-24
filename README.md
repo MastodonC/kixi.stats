@@ -6,6 +6,7 @@ A Clojure/ClojureScript library of statistical transducing functions. Currently 
 * Mean
 * Variance
 * Standard deviation
+* Standard error
 * Skewness
 * Kurtosis
 * Covariance

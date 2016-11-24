@@ -57,6 +57,7 @@
   (post-complete variance-p (somef sqrt)))
 
 (def standard-error-s
+  "Calculates the standard error of sample means."
   (completing standard-deviation-s
               (fn [[c _ ss]]
                 (when-not (zero? c)
@@ -65,6 +66,7 @@
                       (sqrt (/ ss c' c)) 0))))))
 
 (def standard-error
+  "Alias for standard-error-s"
   standard-error-s)
 
 (def skewness-s
