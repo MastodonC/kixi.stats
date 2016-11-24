@@ -56,6 +56,17 @@
   "Calculates the population standard deviation of numeric inputs."
   (post-complete variance-p (somef sqrt)))
 
+(def standard-error-s
+  (completing standard-deviation-s
+              (fn [[c _ ss]]
+                (when-not (zero? c)
+                  (let [c' (dec c)]
+                    (if (pos? c')
+                      (sqrt (/ ss c' c)) 0))))))
+
+(def standard-error
+  standard-error-s)
+
 (def skewness-s
   "Estimates the sample skewness of numeric inputs.
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance."

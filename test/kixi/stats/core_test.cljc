@@ -67,6 +67,18 @@
               (reduce +))
          (count coll)))))
 
+(defn standard-error'
+  [coll]
+  (let [c (count coll)]
+    (when (pos? c)
+      (let [c' (dec c)]
+        (if (pos? c')
+          (sqrt (/ (->> coll
+                        (map #(sq (- % (mean' coll))))
+                        (reduce +))
+                   c' c))
+          0)))))
+
 (defn covariance'
   [fx fy coll]
   (let [coll' (filter fx (filter fy coll))]
@@ -237,6 +249,17 @@
   (is (nil?  (transduce identity kixi/standard-deviation-p [])))
   (is (zero? (transduce identity kixi/standard-deviation-p [1])))
   (is (== 2  (transduce identity kixi/standard-deviation-p [1 5]))))
+
+(defspec standard-error-spec
+  test-opts
+  (for-all [xs (gen/vector numeric)]
+           (is (=ish (transduce identity kixi/standard-error xs)
+                     (standard-error' xs)))))
+
+(deftest standard-error-test
+  (is (nil?   (transduce identity kixi/standard-error [])))
+  (is (zero?  (transduce identity kixi/standard-error [1])))
+  (is (== 1.0 (transduce identity kixi/standard-error [1 3]))))
 
 (defspec skewness-spec
   test-opts
