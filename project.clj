@@ -1,4 +1,4 @@
-(defproject kixi/stats "0.2.3"
+(defproject kixi/stats "0.2.4"
   :description "A library of statistical transducing functions"
   :url "https://github.com/mastodonc/kixi.stats"
   :license {:name "Eclipse Public License"
@@ -13,7 +13,7 @@
                         [lein-doo "0.1.6"]]}}
   :codox {:namespaces [kixi.stats.core]
           :project {:name "kixi.stats"}
-          :source-uri "https://github.com/MastodonC/kixi.stats/blob/v0.2.3/{filepath}#L{line}"}
+          :source-uri "https://github.com/MastodonC/kixi.stats/blob/v0.2.4/{filepath}#L{line}"}
   :cljsbuild
   {:builds
    {:test {:source-paths ["src" "test"]
