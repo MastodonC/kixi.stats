@@ -265,32 +265,38 @@
                      (let [b (/ ss-xy ss-x)]
                        [(- y-bar (* x-bar b)) b])))))
 
-(defn standard-error-estimate
+(def standard-error-estimate
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
-  [fx fy x]
-  (post-complete (sum-squares fx fy)
-                 (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]}]
-                   (when (and (> n 2) (not (zero? ss-x)))
-                     (sqrt
-                      (* (/ 1 (- n 2))
-                         (- ss-y (/ (sq ss-xy) ss-x))
-                         (+ (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))))
+  (let [f (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]} x]
+            (when (and (> n 2) (not (zero? ss-x)))
+              (sqrt
+               (* (/ 1 (- n 2))
+                  (- ss-y (/ (sq ss-xy) ss-x))
+                  (+ (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))]
+    (fn
+      ([sum-squares x]
+       (f sum-squares x))
+      ([fx fy x]
+       (post-complete (sum-squares fx fy) #(f % x))))))
 
-(defn standard-error-prediction
+(def standard-error-prediction
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
-  [fx fy x]
-  (post-complete (sum-squares fx fy)
-                 (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]}]
-                   (when (and (> n 2) (not (zero? ss-x)))
-                     (sqrt
-                      (* (/ 1 (- n 2))
-                         (- ss-y (/ (sq ss-xy) ss-x))
-                         (+ 1 (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))))
+  (let [f (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]} x]
+            (when (and (> n 2) (not (zero? ss-x)))
+              (sqrt
+               (* (/ 1 (- n 2))
+                  (- ss-y (/ (sq ss-xy) ss-x))
+                  (+ 1 (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))]
+    (fn
+      ([sum-squares x]
+       (f sum-squares x))
+      ([fx fy x]
+       (post-complete (sum-squares fx fy) #(f % x))))))

@@ -387,6 +387,17 @@
   (is (nil? (transduce identity (kixi/simple-linear-regression :x :y) [])))
   (is (nil? (transduce identity (kixi/simple-linear-regression :x :y) [{:x 1 :y 2}]))))
 
+(defspec sum-squares-spec
+  test-opts
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
+            x gen/int]
+           (is (= (kixi/standard-error-estimate
+                   (transduce identity (kixi/sum-squares :x :y) coll) x)
+                  (transduce identity (kixi/standard-error-estimate :x :y x) coll)))
+           (is (= (kixi/standard-error-prediction
+                   (transduce identity (kixi/sum-squares :x :y) coll) x)
+                  (transduce identity (kixi/standard-error-prediction :x :y x) coll)))))
 
 (defspec standard-error-estimate-spec
   test-opts
