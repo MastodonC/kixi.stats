@@ -139,6 +139,38 @@
           (let [slope (/ vxy vx)]
             [(- my (* mx slope)) slope]))))))
 
+(defn standard-error-estimate'
+  [fx fy x coll]
+  (let [coll' (filter fx (filter fy coll))]
+    (when-not (empty? coll')
+      (let [c (count coll')
+            xs (map fx coll')
+            ys (map fy coll')
+            mx (mean' xs)
+            my (mean' ys)
+            ssx (reduce + (map #(sq (- % mx)) xs))
+            ssy (reduce + (map #(sq (- % my)) ys))
+            ssxy (reduce + (map #(* (- %1 mx) (- %2 my)) xs ys))]
+        (when (and (> c 2) (not (zero? ssx)))
+          (let [steyx (sqrt (* (/ 1 (- c 2)) (- ssy (/ (sq ssxy) ssx))))]
+            (* steyx (sqrt (+ (/ 1 c) (/ (sq (- x mx)) ssx))))))))))
+
+(defn standard-error-prediction'
+  [fx fy x coll]
+  (let [coll' (filter fx (filter fy coll))]
+    (when-not (empty? coll')
+      (let [c (count coll')
+            xs (map fx coll')
+            ys (map fy coll')
+            mx (mean' xs)
+            my (mean' ys)
+            ssx (reduce + (map #(sq (- % mx)) xs))
+            ssy (reduce + (map #(sq (- % my)) ys))
+            ssxy (reduce + (map #(* (- %1 mx) (- %2 my)) xs ys))]
+        (when (and (> c 2) (not (zero? ssx)))
+          (let [steyx (sqrt (* (/ 1 (- c 2)) (- ssy (/ (sq ssxy) ssx))))]
+            (* steyx (sqrt (+ 1 (/ 1 c) (/ (sq (- x mx)) ssx))))))))))
+
 (defn skewness'
   [coll]
   (let [m (mean' coll)
@@ -354,3 +386,20 @@
 (deftest simple-linear-regression-test
   (is (nil? (transduce identity (kixi/simple-linear-regression :x :y) [])))
   (is (nil? (transduce identity (kixi/simple-linear-regression :x :y) [{:x 1 :y 2}]))))
+
+
+(defspec standard-error-estimate-spec
+  test-opts
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
+            x gen/int]
+           (is (=ish (transduce identity (kixi/standard-error-estimate :x :y x) coll)
+                     (standard-error-estimate' :x :y x coll)))))
+
+(defspec standard-error-prediction-spec
+  test-opts
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
+            x gen/int]
+           (is (=ish (transduce identity (kixi/standard-error-prediction :x :y x) coll)
+                     (standard-error-prediction' :x :y x coll)))))

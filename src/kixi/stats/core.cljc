@@ -227,17 +227,11 @@
   [kvs]
   (fuse-matrix correlation kvs))
 
-(defn simple-linear-regression
-  "Given two functions: (fx input) and (fy input), each of which returns a
-  number, calculates a least squares linear model between fx and fy over inputs.
-  Returns a vector containing the coefficients: offset and slope.
-  Ignores any records with fx or fy are nil. If there are no records with
-  values for fx and fy, the linear relationship is nil. See
-  https://en.wikipedia.org/wiki/Simple_linear_regression."
+(defn sum-squares
   [fx fy]
   (fn
-    ([] [0 0 0 0 0])
-    ([[c mx my ssx ssxy :as acc] e]
+    ([] [0 0 0 0 0 0])
+    ([[c mx my ssx ssy ssxy :as acc] e]
      (let [x (fx e)
            y (fy e)]
        (if (or (nil? x) (nil? y))
@@ -247,8 +241,56 @@
                my' (+ my (/ (- y my) c'))]
            [c' mx' my'
             (+ ssx  (* (- x mx') (- x mx)))
+            (+ ssy  (* (- y my') (- y my)))
             (+ ssxy (* (- x mx') (- y my)))]))))
-    ([[_ mx my ssx ssxy]]
-     (when-not (zero? ssx)
-       (let [b (/ ssxy ssx)]
-         [(- my (* mx b)) b])))))
+    ([[c mx my ssx ssy ssxy]]
+     {:n c
+      :x-bar mx
+      :y-bar my
+      :ss-xy ssxy
+      :ss-x  ssx
+      :ss-y  ssy})))
+
+(defn simple-linear-regression
+  "Given two functions: (fx input) and (fy input), each of which returns a
+  number, calculates a least squares linear model between fx and fy over inputs.
+  Returns a vector containing the coefficients: offset and slope.
+  Ignores any records with fx or fy are nil. If there are no records with
+  values for fx and fy, the linear relationship is nil. See
+  https://en.wikipedia.org/wiki/Simple_linear_regression."
+  [fx fy]
+  (post-complete (sum-squares fx fy)
+                 (fn [{:keys [x-bar y-bar ss-x ss-xy]}]
+                   (when-not (zero? ss-x)
+                     (let [b (/ ss-xy ss-x)]
+                       [(- y-bar (* x-bar b)) b])))))
+
+(defn standard-error-estimate
+  "Given two functions: (fx input) and (fy input), each of which returns a
+  number, and an x value, calculates the standard error of the least
+  squares linear model of fx and fy over inputs.
+  Ignores any records with fx or fy are nil. If there are no records with
+  values for fx and fy, the standard error of the estimate is nil."
+  [fx fy x]
+  (post-complete (sum-squares fx fy)
+                 (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]}]
+                   (when (and (> n 2) (not (zero? ss-x)))
+                     (sqrt
+                      (* (/ 1 (- n 2))
+                         (- ss-y (/ (sq ss-xy) ss-x))
+                         (+ (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))))
+
+(defn standard-error-prediction
+  "Given two functions: (fx input) and (fy input), each of which returns a
+  number, and an x value, calculates the standard error of the least
+  squares linear model of fx and fy over inputs.
+  Ignores any records with fx or fy are nil. If there are no records with
+  values for fx and fy, the standard error of the estimate is nil."
+  [fx fy x]
+  (post-complete (sum-squares fx fy)
+                 (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]}]
+                   (when (and (> n 2) (not (zero? ss-x)))
+                     (sqrt
+                      (* (/ 1 (- n 2))
+                         (- ss-y (/ (sq ss-xy) ss-x))
+                         (+ 1 (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))))
