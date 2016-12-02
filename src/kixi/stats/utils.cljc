@@ -11,6 +11,9 @@
   #?(:clj  (Math/pow x n)
      :cljs (js/Math.pow x n)))
 
+(defn root [x n]
+  (pow x (/ 1 n)))
+
 (defn somef [f]
   (fn [x & args]
     (when-not (nil? x)

@@ -3,7 +3,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [kixi.stats.core :as kixi]
-            [kixi.stats.utils :refer [sq pow sqrt]]
+            [kixi.stats.utils :refer [sq pow sqrt root]]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :refer-macros [for-all]]
@@ -35,16 +35,35 @@
 
 (def =ish
   "Almost equal"
-  (partial approx= 0.0000001))
+  (partial approx= 0.000001))
 
 (defn each? [pred & colls]
   (not-any? false? (apply map pred colls)))
 
-(defn mean'
+(defn arithmetic-mean'
   [coll]
   (let [c (count coll)]
     (when (pos? c)
       (/ (reduce + coll) c))))
+
+(def mean' arithmetic-mean')
+
+(defn geometric-mean'
+  [coll]
+  (let [c (count coll)]
+    (when (and (pos? c) (every? (complement neg?) coll))
+      (root (reduce * coll) c))))
+
+(defn harmonic-mean'
+  [coll]
+  (let [reciprocal #(/ 1 %)
+        c (count coll)
+        s (if (some zero? coll)
+            0.0
+            (reduce + (map reciprocal coll)))]
+    (when-not (zero? c)
+      (if (zero? s)
+        0.0 (/ c s)))))
 
 (defn variance'
   [coll]
@@ -246,14 +265,34 @@
 (deftest count-test
   (is (zero? (transduce identity kixi/count []))))
 
-(defspec mean-spec
+(defspec arithmetic-mean-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
-           (is (=ish (transduce identity kixi/mean xs)
-                     (mean' xs)))))
+           (is (=ish (transduce identity kixi/arithmetic-mean xs)
+                     (arithmetic-mean' xs)))))
 
-(deftest mean-test
-  (is (nil? (transduce identity kixi/mean []))))
+(deftest arithmetic-mean-test
+  (is (nil? (transduce identity kixi/arithmetic-mean []))))
+
+(defspec geometric-mean-spec
+  test-opts
+  (for-all [xs (gen/vector numeric)]
+           (is (=ish (transduce identity kixi/geometric-mean xs)
+                     (geometric-mean' xs)))))
+
+(deftest geometric-mean-test
+  (is (nil? (transduce identity kixi/geometric-mean [])))
+  (is (zero? (transduce identity kixi/geometric-mean [0])))
+  (is (nil? (transduce identity kixi/geometric-mean [-1]))))
+
+(defspec harmonic-mean-spec
+  test-opts
+  (for-all [xs (gen/vector numeric)]
+           (is (=ish (transduce identity kixi/harmonic-mean xs)
+                     (harmonic-mean' xs)))))
+
+(deftest harmonic-mean-test
+  (is (nil? (transduce identity kixi/harmonic-mean []))))
 
 (defspec variance-spec
   test-opts

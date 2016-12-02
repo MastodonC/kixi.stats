@@ -1,5 +1,5 @@
 (ns kixi.stats.core
-  (:require [kixi.stats.utils :refer [sq sqrt pow somef post-complete]]
+  (:require [kixi.stats.utils :refer [sq sqrt pow root somef post-complete]]
             [redux.core :refer [fuse-matrix]])
   (:refer-clojure :exclude [count]))
 
@@ -10,7 +10,7 @@
     ([n _] (inc n))
     ([n] n)))
 
-(def mean
+(def arithmetic-mean
   "Calculates the arithmetic mean of numeric inputs."
   (fn
     ([] [0 0])
@@ -19,6 +19,36 @@
     ([[s c]]
      (when-not (zero? c)
        (/ s c)))))
+
+(def mean
+  "Alias for arithmetic-mean."
+  arithmetic-mean)
+
+(def geometric-mean
+  "Calculates the geometric mean of numeric inputs. Defined only for positive numbers."
+  (fn
+    ([] [1 0])
+    ([[s c] e]
+     (cond
+       (neg? e) (reduced [nil 0])
+       :else [(* s e) (inc c)]))
+    ([[s c]]
+     (when-not (zero? c)
+       (if (zero? s)
+         0.0 (root s c))))))
+
+(def harmonic-mean
+  "Calculates the harmonic mean of numeric inputs."
+  (fn
+    ([] [0 0])
+    ([[s c] e]
+     (cond
+       (zero? e) (reduced [0 (inc c)])
+       :else [(+ s (/ 1 e)) (inc c)]))
+    ([[s c]]
+     (when-not (zero? c)
+       (if (zero? s)
+         0.0 (/ c s))))))
 
 (def variance-s
   "Estimates an unbiased variance of numeric inputs."

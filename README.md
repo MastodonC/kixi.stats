@@ -3,7 +3,9 @@
 A Clojure/ClojureScript library of statistical transducing functions. Currently implemented:
 
 * Count
-* Mean
+* Arithmetic mean
+* Geometric mean
+* Harmonic mean
 * Variance
 * Standard deviation
 * Standard error
