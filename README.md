@@ -14,12 +14,17 @@ A Clojure/ClojureScript library of statistical transducing functions. Currently 
 * Correlation
 * Correlation matrix
 * Simple linear regression
+* Standard error of the mean
+* Standard error of the estimate
+* Standard error of the prediction
 
 Variance, standard deviation, skewness and kurtosis each have sample and population variants.
 
 ## Documentation
 
 View the [documentation here](http://mastodonc.github.io/kixi.stats/).
+
+Examples of `kixi.stats` usage can be seen between 10:20-16:00 of this video on [Clojure for Machine Learning](https://skillsmatter.com/skillscasts/9050-clojure-for-machine-learning).
 
 ## Installation
 
