@@ -26,7 +26,7 @@ View the [documentation here](http://mastodonc.github.io/kixi.stats/).
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.2.4"]
+[kixi/stats "0.2.5"]
 ```
 
 ## Usage
