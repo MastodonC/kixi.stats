@@ -143,7 +143,7 @@
                              (- (/ (* c m4)
                                    (sq m2)) 3)))))
 
-(defn covariance
+(defn covariance-s
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which
   returns a number, estimates the unbiased covariance of those functions over
   inputs.
@@ -165,7 +165,26 @@
             (+ ss (* (- x mx') (- y my)))]))))
     ([[c _ _ ss]]
      (when-not (zero? c)
-       (/ ss c)))))
+       (let [c' (dec c)]
+         (if (pos? c')
+           (/ ss c') 0))))))
+
+(def covariance
+  "Alias for covariance-s"
+  covariance-s)
+
+(defn covariance-p
+  "Given two functions of an input `(fx input)` and `(fy input)`, each of which
+  returns a number, estimates the population covariance of those functions over
+  inputs.
+
+  Ignores any inputs where `(fx input)` or `(fy input)` are nil. If no
+  inputs have both x and y, returns nil."
+  [fx fy]
+  (completing (covariance-s fx fy)
+              (fn [[c _ _ ss]]
+                (when-not (zero? c)
+                  (/ ss c)))))
 
 (defn covariance-matrix
   "Given a map of key names to functions that extract values for those keys

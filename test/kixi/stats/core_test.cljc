@@ -85,11 +85,29 @@
     (if (empty? coll')
       nil
       (let [mean-x (mean' (map fx coll'))
-            mean-y (mean' (map fy coll'))]
-        (/ (reduce + (map #(* (- (fx %) mean-x)
-                              (- (fy %) mean-y))
-                          coll'))
-           (count coll'))))))
+            mean-y (mean' (map fy coll'))
+            c (count coll')]
+        (let [c' (dec c)]
+          (if (pos? c')
+            (/ (reduce + (map #(* (- (fx %) mean-x)
+                                  (- (fy %) mean-y))
+                              coll'))
+               c')
+            0))))))
+
+(defn pcovariance'
+  [fx fy coll]
+  (let [coll' (filter fx (filter fy coll))]
+    (if (empty? coll')
+      nil
+      (let [mean-x (mean' (map fx coll'))
+            mean-y (mean' (map fy coll'))
+            c (count coll')]
+        (when-not (zero? c)
+          (/ (reduce + (map #(* (- (fx %) mean-x)
+                                (- (fy %) mean-y))
+                            coll'))
+             c))))))
 
 (defn covariance-matrix'
   [coll]
@@ -133,7 +151,7 @@
             ys (map fy coll')
             mx (mean' xs)
             my (mean' ys)
-            vx (pvariance' xs)
+            vx (variance' xs)
             vxy (covariance' fx fy coll')]
         (when-not (zero? vx)
           (let [slope (/ vxy vx)]
@@ -349,6 +367,17 @@
 (deftest covariance-test
   (is (nil?  (transduce identity (kixi/covariance :x :y) [])))
   (is (zero? (transduce identity (kixi/covariance :x :y) [{:x 1 :y 2}]))))
+
+(defspec pcovariance-spec
+  test-opts
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute covariance
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+           (is (=ish (transduce identity (kixi/covariance-p :x :y) coll)
+                     (pcovariance' :x :y coll)))))
+
+(deftest pcovariance-test
+  (is (nil?  (transduce identity (kixi/covariance-p :x :y) [])))
+  (is (zero? (transduce identity (kixi/covariance-p :x :y) [{:x 1 :y 2}]))))
 
 (defspec covariance-matrix-spec
   test-opts

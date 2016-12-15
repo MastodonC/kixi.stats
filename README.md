@@ -18,7 +18,7 @@ A Clojure/ClojureScript library of statistical transducing functions. Currently 
 * Standard error of the estimate
 * Standard error of the prediction
 
-Variance, standard deviation, skewness and kurtosis each have sample and population variants.
+Variance, covariance, standard deviation, skewness and kurtosis each have sample and population variants.
 
 ## Documentation
 
