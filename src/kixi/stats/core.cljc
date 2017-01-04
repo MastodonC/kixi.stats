@@ -14,8 +14,10 @@
   "Calculates the arithmetic mean of numeric inputs."
   (fn
     ([] [0 0])
-    ([[s c] e]
-     [(+ s e) (inc c)])
+    ([[s c :as acc] e]
+     (if (nil? e)
+       acc
+       [(+ s e) (inc c)]))
     ([[s c]]
      (when-not (zero? c)
        (/ s c)))))
@@ -28,8 +30,9 @@
   "Calculates the geometric mean of numeric inputs. Defined only for positive numbers."
   (fn
     ([] [1 0])
-    ([[s c] e]
+    ([[s c :as acc] e]
      (cond
+       (nil? e) acc
        (neg? e) (reduced [nil 0])
        :else [(* s e) (inc c)]))
     ([[s c]]
@@ -41,8 +44,9 @@
   "Calculates the harmonic mean of numeric inputs."
   (fn
     ([] [0 0])
-    ([[s c] e]
+    ([[s c :as acc] e]
      (cond
+       (nil? e) acc
        (zero? e) (reduced [0 (inc c)])
        :else [(+ s (/ 1 e)) (inc c)]))
     ([[s c]]
@@ -54,10 +58,12 @@
   "Estimates an unbiased variance of numeric inputs."
   (fn
     ([] [0 0 0])
-    ([[c m ss] e]
-     (let [c' (inc c)
-           m' (+ m (/ (- e m) c'))]
-       [c' m' (+ ss (* (- e m') (- e m)))]))
+    ([[c m ss :as acc] e]
+     (if (nil? e)
+       acc
+       (let [c' (inc c)
+             m' (+ m (/ (- e m) c'))]
+         [c' m' (+ ss (* (- e m') (- e m)))])))
     ([[c m ss]]
      (when-not (zero? c)
        (let [c' (dec c)]
@@ -104,16 +110,18 @@
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance."
   (fn
     ([] [0 0 0 0])
-    ([[c m1 m2 m3] e]
-     (let [c'  (inc c)
-           d   (- e m1)
-           dc  (/ d c')
-           m1' (+ m1 dc)
-           m2' (+ m2 (* (sq d) (/ c c')))
-           m3' (+ m3
-                  (/ (* (pow d 3) (- c' 1) (- c' 2)) (sq c'))
-                  (* -3 m2 dc))]
-       [c' m1' m2' m3']))
+    ([[c m1 m2 m3 :as acc] e]
+     (if (nil? e)
+       acc
+       (let [c'  (inc c)
+             d   (- e m1)
+             dc  (/ d c')
+             m1' (+ m1 dc)
+             m2' (+ m2 (* (sq d) (/ c c')))
+             m3' (+ m3
+                    (/ (* (pow d 3) (- c' 1) (- c' 2)) (sq c'))
+                    (* -3 m2 dc))]
+         [c' m1' m2' m3'])))
     ([[c _ m2 m3]]
      (let [d (* (pow m2 1.5) (- c 2))]
        (when-not (zero? d)
@@ -138,21 +146,23 @@
   and http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
   (fn
     ([] [0 0 0 0 0])
-    ([[c m1 m2 m3 m4] e]
-     (let [c'  (inc c)
-           d   (- e m1)
-           dc  (/ d c')
-           m1' (+ m1 dc)
-           m2' (+ m2 (* (sq d) (/ c c')))
-           m3' (+ m3
-                  (/ (* (pow d 3) (- c' 1) (- c' 2)) (sq c'))
-                  (* -3 m2 dc))
-           m4' (+ m4
-                  (/ (* (pow d 4) (- c' 1) (+ (sq c') (* -3 c') 3))
-                     (pow c' 3))
-                  (* 6 m2 (sq dc))
-                  (* -4 m3 dc))]
-       [c' m1' m2' m3' m4']))
+    ([[c m1 m2 m3 m4 :as acc] e]
+     (if (nil? e)
+       acc
+       (let [c'  (inc c)
+             d   (- e m1)
+             dc  (/ d c')
+             m1' (+ m1 dc)
+             m2' (+ m2 (* (sq d) (/ c c')))
+             m3' (+ m3
+                    (/ (* (pow d 3) (- c' 1) (- c' 2)) (sq c'))
+                    (* -3 m2 dc))
+             m4' (+ m4
+                    (/ (* (pow d 4) (- c' 1) (+ (sq c') (* -3 c') 3))
+                       (pow c' 3))
+                    (* 6 m2 (sq dc))
+                    (* -4 m3 dc))]
+         [c' m1' m2' m3' m4'])))
     ([[c _ m2 _ m4]]
      (when-not (or (zero? m2) (< c 4))
        (let [v (/ m2 (dec c))]
