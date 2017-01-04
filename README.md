@@ -33,7 +33,7 @@ Examples of `kixi.stats` usage can be seen between 10:20-16:00 of this video on 
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.3.1"]
+[kixi/stats "0.3.2"]
 ```
 
 ## Usage
@@ -69,6 +69,7 @@ Strongly influenced by [Tesser](https://github.com/aphyr/tesser).
 ## Contributors
 
   * [Henry Garner](https://github.com/henrygarner)
+  * [Simon Belak](https://github.com/sbelak)
 
 ## License
 
