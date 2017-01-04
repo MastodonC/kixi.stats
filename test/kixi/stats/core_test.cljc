@@ -250,11 +250,11 @@
 
 (defn finite?
   [x]
-  #?(:clj  (Double/isFinite x)
-     :cljs (js/isFinite x)))
+  #?(:clj  (or (nil? x) (Double/isFinite x))
+     :cljs (or (nil? x) (js/isFinite x))))
 
 (def numeric
-  (gen/such-that finite? (gen/one-of [gen/int gen/double])))
+  (gen/such-that finite? (gen/one-of [gen/int gen/double (gen/return nil)])))
 
 (defspec count-spec
   test-opts
@@ -269,7 +269,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/arithmetic-mean xs)
-                     (arithmetic-mean' xs)))))
+                     (arithmetic-mean' (remove nil? xs))))))
 
 (deftest arithmetic-mean-test
   (is (nil? (transduce identity kixi/arithmetic-mean []))))
@@ -278,7 +278,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/geometric-mean xs)
-                     (geometric-mean' xs)))))
+                     (geometric-mean' (remove nil? xs))))))
 
 (deftest geometric-mean-test
   (is (nil? (transduce identity kixi/geometric-mean [])))
@@ -289,7 +289,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/harmonic-mean xs)
-                     (harmonic-mean' xs)))))
+                     (harmonic-mean' (remove nil? xs))))))
 
 (deftest harmonic-mean-test
   (is (nil? (transduce identity kixi/harmonic-mean []))))
@@ -298,7 +298,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/variance-s xs)
-                     (variance' xs)))))
+                     (variance' (remove nil? xs))))))
 
 (deftest variance-test
   (is (nil?  (transduce identity kixi/variance-s [])))
@@ -310,7 +310,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/variance-p xs)
-                     (pvariance' xs)))))
+                     (pvariance' (remove nil? xs))))))
 
 (deftest pvariance-test
   (is (nil?  (transduce identity kixi/variance-p [])))
@@ -321,7 +321,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/standard-deviation-s xs)
-                     (some-> (variance' xs) sqrt)))))
+                     (some-> (variance' (remove nil? xs)) sqrt)))))
 
 (deftest standard-deviation-test
   (is (nil?  (transduce identity kixi/standard-deviation-s [])))
@@ -332,7 +332,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/standard-deviation-p xs)
-                     (some-> (pvariance' xs) sqrt)))))
+                     (some-> (pvariance' (remove nil? xs)) sqrt)))))
 
 (deftest pstandard-deviation-test
   (is (nil?  (transduce identity kixi/standard-deviation-p [])))
@@ -343,7 +343,7 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
            (is (=ish (transduce identity kixi/standard-error xs)
-                     (standard-error' xs)))))
+                     (standard-error' (remove nil? xs))))))
 
 (deftest standard-error-test
   (is (nil?   (transduce identity kixi/standard-error [])))
