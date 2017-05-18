@@ -1,6 +1,16 @@
 # kixi.stats
 
-A Clojure/ClojureScript library of statistical transducing functions. Currently implemented:
+A Clojure/ClojureScript library of statistical sampling and transducing functions.
+
+**Available distributions:**
+
+* Uniform
+* Bernoulli
+* Binomial
+* Normal
+* Categorical
+
+**Transducing functions:**
 
 * Count
 * Arithmetic mean
@@ -38,6 +48,8 @@ Add the following dependency:
 
 ## Usage
 
+**Transducing functions**
+
 [kixi.stats.core](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/core.cljc) contains statistical reducing functions that can be used with `transduce`:
 
 ```clojure
@@ -62,9 +74,61 @@ Add the following dependency:
 
 If you have multiple statistics to calculate over the same collection, take a look at the reducing function combinators available in [redux](https://github.com/henrygarner/redux). Redux' `fuse` will return a higher-order reducing function that can be used to execute an arbitrary number of reducing functions simultaneously.
 
+**Distribution sampling**
+
+[kixi.stats.random](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/random.cljc) contains functions for specifying and sampling from statistical distributions.
+
+```clojure
+(require '[kixi.stats.random :refer [draw sample binomial]])
+
+(draw (binomial {:n 100 :p 0.5}))
+
+;;=> 54
+
+
+(sample 10 (binomial {:n 100 :p 0.5}))
+
+;;=> (49 53 53 44 55 47 45 51 49 51)
+```
+
+`draw` and `sample` are the primary methods for extracting random variables from a distribution. `draw` returns a single value whereas `sample` returns _n_ values.
+
+Each distribution implements the `clojure.lang.ISeq` interface, so an infinite lazy sequence can ge generated with `(seq (binomial {:n 100 :p 0.5)))`. However, where possible, `sample` uses optimisations to return exactly _n_ values, and should be preferred.
+
+**Discrete summarisation**
+
+The Bernoulli and categorical distributions are discrete distributions, so samples can be summarised by counting the number of elements of each sampled class. Discrete distributions can be sampled in this way with `sample-summary`:
+
+```clojure
+(require '[kixi.stats.random :refer [sample-summary bernoulli]])
+
+(sample-summary 1000 (bernoulli 0.3))
+
+;;=> {true 296, false 704}
+```
+
+This is the equivalent of `(frequencies (sample 1000 (bernoulli 0.3)))`, but as with `sample`, `sample-summary` uses internal optimisations to avoid realising and aggregating large number of samples, and should be preferred.
+
+**Deterministic sampling**
+
+The sampling functions `draw`, `sample` and `sample-summary` are all designed to perform deterministically when provided with a seed value. If repeatable samples are desired, pass `{:seed SEED_LONG}` as the final argument:
+
+```clojure
+(require '[kixi.stats.random :refer [uniform]])
+
+(draw (uniform 0 1) {:seed 42})
+
+;;=> 0.7415648787718233
+
+(draw (uniform 0 1) {:seed 42})
+
+;;=> 0.7415648787718233
+```
+
 ## References
 
-Strongly influenced by [Tesser](https://github.com/aphyr/tesser).
+Statistical reducing functions strong influenced by [Tesser](https://github.com/aphyr/tesser).
+Pseudorandom number generation is provided by [test.check](https://github.com/clojure/test.check/).
 
 ## Contributors
 
