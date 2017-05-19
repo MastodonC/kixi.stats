@@ -43,7 +43,7 @@ Examples of `kixi.stats` usage can be seen between 10:20-16:00 of this video on 
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.3.2"]
+[kixi/stats "0.3.3"]
 ```
 
 ## Usage
@@ -137,6 +137,6 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
 
 ## License
 
-Copyright © 2016 Mastodon C Ltd
+Copyright © 2017 Mastodon C Ltd
 
 Distributed under the Eclipse Public License version 1.0.
