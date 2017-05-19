@@ -1,4 +1,4 @@
-(defproject kixi/stats "0.3.2"
+(defproject kixi/stats "0.3.3-SNAPSHOT"
   :description "A library of statistical transducing functions"
   :url "https://github.com/mastodonc/kixi.stats"
   :license {:name "Eclipse Public License"
