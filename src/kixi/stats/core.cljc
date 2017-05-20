@@ -1,7 +1,17 @@
 (ns kixi.stats.core
-  (:require [kixi.stats.utils :refer [sq sqrt pow root somef post-complete]]
+  (:require [kixi.stats.math :refer [sq sqrt pow root]]
             [redux.core :refer [fuse-matrix]])
   (:refer-clojure :exclude [count]))
+
+(defn ^:no-doc somef
+  [f]
+  (fn [x & args]
+    (when-not (nil? x)
+      (apply f x args))))
+
+(defn ^:no-doc post-complete
+  [rf f]
+  (completing rf #(f (rf %))))
 
 (def count
   "Calculates the count of inputs."

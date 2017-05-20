@@ -4,11 +4,18 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 
 **Available distributions:**
 
-* Uniform
 * Bernoulli
+* Beta
 * Binomial
-* Normal
 * Categorical
+* Chi-Squared
+* Exponential
+* F
+* Gamma
+* Normal
+* Poisson
+* Uniform
+* Weibull
 
 **Available transducing functions:**
 
@@ -91,13 +98,13 @@ If you have multiple statistics to calculate over the same collection, take a lo
 ;;=> (49 53 53 44 55 47 45 51 49 51)
 ```
 
-`draw` and `sample` are the primary means of extracting samples from a distribution. `draw` returns a single sample whereas `sample` returns _n_ samples.
+`draw` and `sample` are the primary means of extracting variates from a distribution. `draw` returns a single variate whereas `sample` returns _n_ variates.
 
-Each distribution implements the `clojure.lang.ISeq` / `ISeqable`  interface, so an infinite lazy sequence can be generated with `(seq (binomial {:n 100 :p 0.5)))`. Where possible, `sample` uses optimisations to return exactly _n_ values, and should be preferred.
+Each distribution implements the `clojure.lang.ISeq` / `ISeqable`  interface, so _n_ variates can be sampled with `(take n (binomial {:n 100 :p 0.5}))`. However, where possible `sample` uses optimisations to return exactly _n_ variates, and should be preferred.
 
 **Discrete summarisation**
 
-The Bernoulli and categorical distributions are discrete, so samples can be summarised by counting the number of times each sampled class appears. Discrete distributions can be directly sampled in this way with `sample-summary`:
+The Bernoulli, binomial and categorical distributions are discrete, so samples can be summarised by counting the number of times each variate appears. Discrete distributions can be directly sampled in this way with `sample-summary`:
 
 ```clojure
 (require '[kixi.stats.random :refer [sample-summary bernoulli]])
@@ -107,7 +114,7 @@ The Bernoulli and categorical distributions are discrete, so samples can be summ
 ;;=> {true 296, false 704}
 ```
 
-This is equivalent to `(frequencies (sample 1000 (bernoulli 0.3)))`, but `sample-summary` uses optimisations to avoid reifying and aggregating a large intermediate sample, and should be preferred. `sample-summary` returns a value for all available classes, even where that value is zero.
+This is equivalent to `(frequencies (sample 1000 (bernoulli 0.3)))`, but where possible `sample-summary` uses optimisations to avoid reifying and aggregating a large intermediate sample, and should be preferred. When `sample-summary` doesn't return a value for a particular variate, that value should be assumed zero.
 
 **Deterministic sampling**
 

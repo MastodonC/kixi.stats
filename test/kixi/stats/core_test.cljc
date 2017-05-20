@@ -3,7 +3,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [kixi.stats.core :as kixi]
-            [kixi.stats.utils :refer [sq pow sqrt root]]
+            [kixi.stats.math :refer [sq pow sqrt root]]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :refer-macros [for-all]]
