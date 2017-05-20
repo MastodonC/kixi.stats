@@ -16,7 +16,7 @@
 
 (def gen-probability
   "Returns a double between 0 and 1 inclusive"
-  (gen/fmap #(* % 0.001) (gen/such-that #(<= % 1000) gen/int)))
+  (gen/fmap #(* % 0.001) (gen/such-that #(<= % 1000) gen/nat)))
 
 (def gen-probabilities
   "Returns a vector of probabilities which sum to 1.0"
