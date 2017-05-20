@@ -56,16 +56,17 @@
 (declare ->Binomial)
 
 (defn ^:no-doc categorical-sample
-  [category-probs n rng]
+  [ks ps n rng]
   (loop [coll '() n n
          rem 1 rng rng
-         categories (sequence category-probs)]
-    (if (seq categories)
-      (let [[c p] (first categories)
+         ks ks ps ps]
+    (if (and (seq ks) (> rem 0))
+      (let [k (first ks)
+            p (first ps)
             x (sample-1 (->Binomial n (/ p rem)) rng)]
-        (recur (concat coll (repeat x c)) (- n x)
+        (recur (concat coll (repeat x k)) (- n x)
                (- rem p) (next-rng rng)
-               (rest categories)))
+               (rest ks) (rest ps)))
       coll)))
 
 
@@ -110,7 +111,7 @@
     [p]
     ISampleable
     (sample-1 [this rng]
-      (<= (rand-double rng) p))
+      (< (rand-double rng) p))
     (sample-n [this n rng]
       (let [v (sample-1 (->Binomial n p) rng)]
         (-> (concat (repeat v true)
@@ -142,23 +143,26 @@
                (-seq [this] (sampleable->seq this)))))
 
 (deftype ^:no-doc Categorical
-    [category-probs]
+    [ks ps]
     ISampleable
     (sample-1 [this rng]
-      (first (categorical-sample category-probs 1 rng)))
+      (first (categorical-sample ks ps 1 rng)))
     (sample-n [this n rng]
-      (shuffle (categorical-sample category-probs n rng) rng))
+      (shuffle (categorical-sample ks ps n rng) rng))
     IDiscrete
     (sample-frequencies [this n rng]
       (loop [coll (transient {}) n n
              rem 1 rng rng
-             categories (sequence category-probs)]
-        (if (seq categories)
-          (let [[c p] (first categories)
-                x (sample-1 (->Binomial n (/ p rem)) rng)]
-            (recur (assoc! coll c x) (- n x)
+             ks ks ps ps]
+        (if (seq ks)
+          (let [k (first ks)
+                p (first ps)
+                x (if (pos? rem)
+                    (sample-1 (->Binomial n (/ p rem)) rng)
+                    0)]
+            (recur (assoc! coll k x) (- n x)
                    (- rem p) (next-rng rng)
-                   (rest categories)))
+                   (rest ks) (rest ps)))
           (persistent! coll))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
@@ -170,7 +174,7 @@
 
 (defn uniform
   "Returns a uniform distribution.
-  Params: a ∈ R, b ∈ R"
+  Params: a ∈ ℝ, b ∈ ℝ"
   [a b]
   (->Uniform a b))
 
@@ -182,27 +186,28 @@
 
 (defn binomial
   "Return a binomial distribution.
-  Params: {:n ∈ N_0, :p ∈ [0 1]}"
+  Params: {:n ∈ ℕ, :p ∈ [0 1]}"
   [{:keys [n p]}]
   (->Binomial n p))
 
 (defn normal
   "Returns a normal distribution.
-  Params: {:mu ∈ R, :sd ∈ R}"
+  Params: {:mu ∈ ℝ, :sd ∈ ℝ}"
   [{:keys [mu sd]}]
   (->Normal mu sd))
 
 (defn categorical
   "Returns a categorical distribution.
-  Params: {k1 ∈ [0 1], ..., kn ∈ [0 1]}
-  where keys k1...n are the categories
-  and the vals are in the range 0..1.
-  Vals should sum to 1.0"
-  [category-probs]
-  (->Categorical category-probs))
+  Params: [k1, ..., kn], [p1, ..., pn]
+  where k1...kn are the categories
+  and p1...pn are probabilities.
+  Probabilities should be >= 0 and sum to 1"
+  [ks ps]
+  (->Categorical ks ps))
 
 (defn draw
-  "Returns a single sample from the distribution"
+  "Returns a single sample from the distribution.
+  An optional seed long will ensure deterministic results"
   ([^kixi.stats.random.ISampleable distribution]
    (draw distribution {}))
   ([^kixi.stats.random.ISampleable distribution {:keys [seed]}]
@@ -210,7 +215,8 @@
      (sample-1 distribution rng))))
 
 (defn sample
-  "Returns n samples from the distribution"
+  "Returns n samples from the distribution.
+  An optional seed long will ensure deterministic results"
   ([n ^kixi.stats.random.ISampleable distribution]
    (sample n distribution {}))
   ([n ^kixi.stats.random.ISampleable distribution {:keys [seed]}]
@@ -220,7 +226,8 @@
 (defn sample-summary
   "Returns a summary count of each class
   for a sample of a given length from a discrete distribution
-  such as the Bernoulli or categorical"
+  such as the Bernoulli or categorical.
+  An optional seed long will ensure deterministic results"
   ([n ^kixi.stats.random.IDiscrete distribution]
    (sample-summary n distribution {}))
   ([n ^kixi.stats.random.IDiscrete distribution {:keys [seed]}]
