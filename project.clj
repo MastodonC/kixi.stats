@@ -9,7 +9,7 @@
                              [org.clojure/clojurescript "1.9.542"]
                              [org.clojure/test.check "0.9.0"]]
               :plugins [[lein-cljsbuild "1.1.3"]
-                        [lein-codox "0.9.4"]
+                        [lein-codox "0.10.3"]
                         [lein-doo "0.1.6"]]}}
   :codox {:namespaces [kixi.stats.core kixi.stats.random]
           :project {:name "kixi.stats"}
