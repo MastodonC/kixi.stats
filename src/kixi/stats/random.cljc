@@ -154,16 +154,17 @@
       (loop [coll (transient {}) n n
              rem 1 rng rng
              ks ks ps ps]
-        (if (seq ks)
+        (if (and (seq ks) (pos? rem))
           (let [k (first ks)
                 p (first ps)
-                x (if (pos? rem)
-                    (sample-1 (->Binomial n (/ p rem)) rng)
-                    0)]
+                x (sample-1 (->Binomial n (/ p rem)) rng)]
             (recur (assoc! coll k x) (- n x)
                    (- rem p) (next-rng rng)
                    (rest ks) (rest ps)))
-          (persistent! coll))))
+          (if (seq ks)
+            (-> (reduce #(assoc! %1 %2 0) coll ks)
+                (persistent!))
+            (persistent! coll)))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
