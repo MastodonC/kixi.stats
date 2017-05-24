@@ -376,7 +376,7 @@
   (->Categorical ks ps))
 
 (defn draw
-  "Returns a single sample from the distribution.
+  "Returns a single variate from the distribution.
   An optional seed long will ensure deterministic results"
   ([^kixi.stats.random.ISampleable distribution]
    (draw distribution {}))
@@ -385,7 +385,7 @@
      (sample-1 distribution rng))))
 
 (defn sample
-  "Returns n samples from the distribution.
+  "Returns n variates from the distribution.
   An optional seed long will ensure deterministic results"
   ([n ^kixi.stats.random.ISampleable distribution]
    (sample n distribution {}))
