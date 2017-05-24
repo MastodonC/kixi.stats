@@ -129,9 +129,9 @@
             (/ 1 (* prod (inc (inv-gamma-1pm1 t)))))))
       (let [y (+ absx lanczos-g 0.5)
             absg (* (/ SQRT_TWO_PI absx)
-                     (pow y (+ absx 0.5))
-                     (exp (- y))
-                     (lanczos-approximation absx))]
+                    (pow y (+ absx 0.5))
+                    (exp (- y))
+                    (lanczos-approximation absx))]
         (if (> x 0)
           absg
           (/ (- PI)
