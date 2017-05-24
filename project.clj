@@ -11,8 +11,7 @@
               :plugins [[lein-cljsbuild "1.1.3"]
                         [lein-codox "0.10.3"]
                         [lein-doo "0.1.6"]]}}
-  :codox {:namespaces [kixi.stats.core kixi.stats.random]
-          :project {:name "kixi.stats"}
+  :codox {:project {:name "kixi.stats"}
           :source-uri "https://github.com/MastodonC/kixi.stats/blob/v0.3.4/{filepath}#L{line}"}
   :cljsbuild
   {:builds
