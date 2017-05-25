@@ -76,6 +76,16 @@
 (defprotocol ^:no-doc IDiscrete
   (sample-frequencies [this n rng]))
 
+(defprotocol ^:no-doc IVariance
+  (mean [this])
+  (variance [this]))
+
+(defprotocol ^:no-doc IDensity
+  (median [this])
+  (quantile [this p])
+  (cdf [this x])
+  (pdf [this x]))
+
 (defn ^:no-doc sampleable->seq
   ([^kixi.stats.random.ISampleable distribution]
    (sampleable->seq distribution (make-random)))
