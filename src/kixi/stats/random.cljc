@@ -153,6 +153,24 @@
       (/ (- (log (rand-double rng))) rate))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    IVariance
+    (mean [this]
+      (/ 1 rate))
+    (variance [this]
+      (/ 1 (sq rate)))
+    IDensity
+    (median [this]
+      (/ (log 2) rate))
+    (quantile [this p]
+      (/ (- (log (- 1 p))) rate))
+    (pdf [this x]
+      (if (< x 0)
+        0
+        (* rate (exp (* (- rate) x)))))
+    (cdf [this x]
+      (if (< x 0)
+        0
+        (- 1 (exp (* (- rate) x)))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
