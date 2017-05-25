@@ -1,6 +1,6 @@
 (ns kixi.stats.random
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [pow log sqrt exp cos sin PI]]
+  (:require [kixi.stats.math :refer [pow log sqrt exp cos sin sq PI]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
 ;;;; Randomness helpers
@@ -125,6 +125,22 @@
       (+ (* (rand-double rng) (- b a)) a))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    IVariance
+    (mean [this]
+      (/ (+ a b) 2))
+    (variance [this]
+      (/ (sq (- b a)) 12))
+    IDensity
+    (median [this]
+      (/ (+ a b) 2))
+    (quantile [this p]
+      (+ a (* (- b a) p)))
+    (pdf [this x]
+      (if (<= a x b)
+        (/ 1 (- b a))
+        0))
+    (cdf [this x]
+      (max 0 (min 1 (/ (- x a) (- b a)))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
