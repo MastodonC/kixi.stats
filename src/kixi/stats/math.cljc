@@ -41,7 +41,7 @@
 
 ;;;; Gamma
 
-(def ^:no-doc SQRT_TWO_PI (sqrt (* 2 PI)))
+(def ^:no-doc SQRT_TWO_PI 2.506628274631000502)
 
 (def ^:no-doc LANCZOS
   [[14 3.6899182659531625E-6] [13 -2.6190838401581408E-5]
@@ -116,23 +116,23 @@
 (defn gamma
   "Computes the value of Γx"
   [x]
-  (let [absx (abs x)]
-    (if (<= absx 20)
+  (let [abs-x (abs x)]
+    (if (<= abs-x 20)
       (if (>= x 1)
-        (loop [t x prod 1]
-          (if (> t 2.5)
-            (recur (dec t) (* prod (dec t)))
-            (/ prod (inc (inv-gamma-1pm1 (dec t))))))
-        (loop [t x prod x]
-          (if (< t -0.5)
-            (recur (inc t) (* prod (inc t)))
-            (/ 1 (* prod (inc (inv-gamma-1pm1 t)))))))
-      (let [y (+ absx lanczos-g 0.5)
-            absg (* (/ SQRT_TWO_PI absx)
-                    (pow y (+ absx 0.5))
-                    (exp (- y))
-                    (lanczos-approximation absx))]
-        (if (> x 0)
-          absg
+        (loop [t (dec x) p 1]
+          (if (> t 1.5)
+            (recur (dec t) (* p t))
+            (/ p (inc (inv-gamma-1pm1 t)))))
+        (loop [t (inc x) p x]
+          (if (< t 0.5)
+            (recur (inc t) (* p t))
+            (/ 1 (* p (inc (inv-gamma-1pm1 (dec t))))))))
+      (let [y (+ abs-x lanczos-g 0.5)
+            abs-g (* (/ SQRT_TWO_PI abs-x)
+                     (pow y (+ abs-x 0.5))
+                     (exp (- y))
+                     (lanczos-approximation abs-x))]
+        (if (pos? x)
+          abs-g
           (/ (- PI)
-             (* x absg (sin (* PI x)))))))))
+             (* x abs-g (sin (* PI x)))))))))
