@@ -342,6 +342,29 @@
                (-seq [this] (sampleable->seq this)))))
 
 
+;;;; Maximum likelihood estimators
+
+(defn ^:no-doc normal-mle
+  [xs]
+  (loop [n 0 m 0 ss 0 xs xs]
+    (if (seq xs)
+      (let [x (first xs)
+            n' (inc n)
+            m' (+ m (/ (- x m) n'))]
+        (recur n' m' (+ ss (* (- x m') (- x m))) (rest xs)))
+      (when-not (zero? n)
+        [m (sqrt (/ ss n))]))))
+
+(defn ^:no-doc exponential-mle
+  [xs]
+  (loop [n 0
+         s 0.0
+         xs xs]
+    (if (seq xs)
+      (recur (inc n) (+ s (or (first xs) 0.0)) (rest xs))
+      (when-not (zero? s)
+        (/ n s)))))
+
 ;;;; Public API
 
 (defn uniform
@@ -355,6 +378,12 @@
   Params: rate ∈ ℝ > 0"
   [rate]
   (->Exponential rate))
+
+(defn ->>exponential
+  "Returns the maximum likelihood exponential distribution"
+  [xs]
+  (->> (exponential-mle xs)
+       (apply ->Exponential)))
 
 (defn bernoulli
   "Returns a Bernoulli distribution.
@@ -373,6 +402,12 @@
   Params: {:mu ∈ ℝ, :sd ∈ ℝ}"
   [{:keys [mu sd]}]
   (->Normal mu sd))
+
+(defn ->>normal
+  "Returns the maximum likelihood normal distribution"
+  [xs]
+  (->> (normal-mle xs)
+       (apply ->Normal)))
 
 (defn gamma
   "Returns a gamma distribution.
