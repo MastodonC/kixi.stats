@@ -1,6 +1,6 @@
 (ns kixi.stats.random
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [pow log sqrt exp cos sin PI]]
+  (:require [kixi.stats.math :refer [pow log sqrt exp cos sin sq PI]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
 ;;;; Randomness helpers
@@ -76,6 +76,16 @@
 (defprotocol ^:no-doc IDiscrete
   (sample-frequencies [this n rng]))
 
+(defprotocol ^:no-doc IVariance
+  (mean [this])
+  (variance [this]))
+
+(defprotocol ^:no-doc IDensity
+  (median [this])
+  (quantile [this p])
+  (cdf [this x])
+  (pdf [this x]))
+
 (defn ^:no-doc sampleable->seq
   ([^kixi.stats.random.ISampleable distribution]
    (sampleable->seq distribution (make-random)))
@@ -115,6 +125,22 @@
       (+ (* (rand-double rng) (- b a)) a))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    IVariance
+    (mean [this]
+      (/ (+ a b) 2))
+    (variance [this]
+      (/ (sq (- b a)) 12))
+    IDensity
+    (median [this]
+      (/ (+ a b) 2))
+    (quantile [this p]
+      (+ a (* (- b a) p)))
+    (pdf [this x]
+      (if (<= a x b)
+        (/ 1 (- b a))
+        0))
+    (cdf [this x]
+      (max 0 (min 1 (/ (- x a) (- b a)))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
@@ -127,6 +153,24 @@
       (/ (- (log (rand-double rng))) rate))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    IVariance
+    (mean [this]
+      (/ 1 rate))
+    (variance [this]
+      (/ 1 (sq rate)))
+    IDensity
+    (median [this]
+      (/ (log 2) rate))
+    (quantile [this p]
+      (/ (- (log (- 1 p))) rate))
+    (pdf [this x]
+      (if (< x 0)
+        0
+        (* rate (exp (* (- rate) x)))))
+    (cdf [this x]
+      (if (< x 0)
+        0
+        (- 1 (exp (* (- rate) x)))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
@@ -298,6 +342,29 @@
                (-seq [this] (sampleable->seq this)))))
 
 
+;;;; Maximum likelihood estimators
+
+(defn ^:no-doc normal-mle
+  [xs]
+  (loop [n 0 m 0 ss 0 xs xs]
+    (if (seq xs)
+      (let [x (first xs)
+            n' (inc n)
+            m' (+ m (/ (- x m) n'))]
+        (recur n' m' (+ ss (* (- x m') (- x m))) (rest xs)))
+      (when-not (zero? n)
+        [m (sqrt (/ ss n))]))))
+
+(defn ^:no-doc exponential-mle
+  [xs]
+  (loop [n 0
+         s 0.0
+         xs xs]
+    (if (seq xs)
+      (recur (inc n) (+ s (or (first xs) 0.0)) (rest xs))
+      (when-not (zero? s)
+        (/ n s)))))
+
 ;;;; Public API
 
 (defn uniform
@@ -311,6 +378,12 @@
   Params: rate ∈ ℝ > 0"
   [rate]
   (->Exponential rate))
+
+(defn ->>exponential
+  "Returns the maximum likelihood exponential distribution"
+  [xs]
+  (->> (exponential-mle xs)
+       (apply ->Exponential)))
 
 (defn bernoulli
   "Returns a Bernoulli distribution.
@@ -329,6 +402,12 @@
   Params: {:mu ∈ ℝ, :sd ∈ ℝ}"
   [{:keys [mu sd]}]
   (->Normal mu sd))
+
+(defn ->>normal
+  "Returns the maximum likelihood normal distribution"
+  [xs]
+  (->> (normal-mle xs)
+       (apply ->Normal)))
 
 (defn gamma
   "Returns a gamma distribution.
