@@ -1,6 +1,6 @@
 (ns kixi.stats.random
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [pow log sqrt exp cos sin PI]]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
 ;;;; Randomness helpers
@@ -22,6 +22,59 @@
   (let [[r1 r2] (split rng)]
     (* (sqrt (* -2 (log (rand-double r1))))
        (cos (* 2 PI (rand-double r2))))))
+
+(defn ^:no-doc log-factorial [m]
+  (->> (range 1 (inc m))
+       (map log)
+       (reduce +)))
+
+(defn ^:no-doc rand-binomial-btrs
+  [n p rng]
+  (let [spq (sqrt (* n p (- 1 p)))
+        b (+ 1.15 (* 2.53 spq))
+        a (+ -0.0873 (* 0.0248 b) (* 0.01 p))
+        c (+ 0.5 (* n p))
+        vr (- 0.92 (/ 4.2 b))]
+    (loop [rng rng]
+      (let [[r1 r2] (split rng)
+            u (- (rand-double r1) 0.5)
+            us (- 0.5 (abs u))
+            v (rand-double r2)
+            k (int (+ (* (+ (* 2.0 (/ a us)) b) u) c))]
+        (if (<= 0 k n)
+          (if (and (>= us 0.07) (<= v vr))
+            k
+            (let [alpha (* (+ 2.83 (/ 5.2 b)) spq)
+                  lpq (log (/ p (- 1 p)))
+                  m (int (* (inc n) p))
+                  h (+ (log-factorial m) (log-factorial (- n m)))
+                  v (* v (/ alpha (+ (/ a (* us us)) b)))]
+              (if (<= v (+ (- h (log-factorial k) (log-factorial (- n k)))
+                           (* (- k m) lpq)))
+                k
+                (recur (next-rng rng)))))
+          (recur (next-rng rng)))))))
+
+(defn ^:no-doc rand-binomial-simple
+  [n p rng]
+  (loop [i 0 rng rng result 0]
+    (if (< i n)
+      (recur (inc i) (next-rng rng)
+             (if (< (rand-double rng) p)
+               (inc result)
+               result))
+      result)))
+
+(defn ^:no-doc rand-binomial
+  [n p rng]
+  (cond
+    (= p 0.0) 0
+    (= p 1.0) n
+    (and (> p 0.5) (> (* n (- 1 p)) 10))
+    (- n (rand-binomial-btrs n (- 1 p) rng))
+    (and (<= p 0.5) (> (* n p) 10))
+    (rand-binomial-btrs n p rng)
+    :else (rand-binomial-simple n p rng)))
 
 (defn ^:no-doc rand-gamma
   [k rng]
@@ -136,13 +189,7 @@
     [n p]
     ISampleable
     (sample-1 [this rng]
-      (loop [i 0 rng rng result 0]
-        (if (< i n)
-          (recur (inc i) (next-rng rng)
-                 (if (< (rand-double rng) p)
-                   (inc result)
-                   result))
-          result)))
+      (rand-binomial n p rng))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     IDiscrete
@@ -284,7 +331,7 @@
         (if (and (seq ks) (pos? rem))
           (let [k (first ks)
                 p (first ps)
-                x (sample-1 (->Binomial n (/ p rem)) rng)]
+                x (rand-binomial n (/ p rem) rng)]
             (recur (assoc! coll k x) (- n x)
                    (- rem p) (next-rng rng)
                    (rest ks) (rest ps)))
