@@ -4,6 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[redux "0.1.3"]
+                 [org.clojure/data.avl "0.0.17"]
                  [org.clojure/test.check "0.9.0"]]
   :profiles {:dev
              {:dependencies [[org.clojure/clojure "1.8.0"]

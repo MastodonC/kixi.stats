@@ -1,6 +1,7 @@
 (ns kixi.stats.random
   (:refer-clojure :exclude [shuffle rand-int])
   (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI]]
+            [clojure.data.avl :as avl]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
 ;;;; Randomness helpers
@@ -23,10 +24,14 @@
     (* (sqrt (* -2 (log (rand-double r1))))
        (cos (* 2 PI (rand-double r2))))))
 
-(defn ^:no-doc log-factorial [m]
-  (->> (range 1 (inc m))
-       (map log)
-       (reduce +)))
+(def ^:no-doc log-factorial
+  (let [memo (atom (avl/sorted-map 1 0.0))]
+    (fn [m]
+      (or (get @memo m)
+          (let [[m' x'] (avl/nearest @memo < m)]
+            (loop [m' (inc m') x' (+ x' (log m'))]
+              (swap! memo assoc m' x')
+              (if (= m' m) x' (recur (inc m') (+ x' (log (inc m')))))))))))
 
 (defn ^:no-doc rand-binomial-btrs
   [n p rng]
