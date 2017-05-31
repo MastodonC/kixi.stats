@@ -288,10 +288,7 @@
             (recur (assoc! coll k x) (- n x)
                    (- rem p) (next-rng rng)
                    (rest ks) (rest ps)))
-          (if (seq ks)
-            (-> (reduce #(assoc! %1 %2 0) coll ks)
-                (persistent!))
-            (persistent! coll)))))
+          (persistent! coll))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable

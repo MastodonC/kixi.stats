@@ -40,7 +40,7 @@
   (gen/double* {:infinite? false :NaN? false :min 0.1 :max 100}))
 
 (def gen-dof
-  (gen/choose 2 1000))
+  (gen/choose 3 1000))
 
 (def gen-categories
   "Returns [[categories] [probabilities]]. Probabilities sum to 1.0"
@@ -183,16 +183,15 @@
             p gen-probability
             n gen/nat
             [ks ps] gen-categories]
-    (let [empty-bernoulli-counts {true 0 false 0}
-          empty-category-counts (zipmap ks (repeat 0))]
-      (is (= (sut/sample-summary n (sut/bernoulli p) {:seed seed})
-             (->> (sut/sample n (sut/bernoulli p) {:seed seed})
-                  (frequencies)
-                  (merge empty-bernoulli-counts))))
-      (is (= (sut/sample-summary n (sut/categorical ks ps) {:seed seed})
-             (->> (sut/sample n (sut/categorical ks ps) {:seed seed})
-                  (frequencies)
-                  (merge empty-category-counts)))))))
+    (is (= (sut/sample-summary n (sut/bernoulli p) {:seed seed})
+           (->> (sut/sample n (sut/bernoulli p) {:seed seed})
+                (frequencies)
+                (merge {true 0 false 0}))))
+    (is (= (->> (sut/sample-summary n (sut/categorical ks ps) {:seed seed})
+                (remove (fn [[k v]] (zero? v)))
+                (into {}))
+           (->> (sut/sample n (sut/categorical ks ps) {:seed seed})
+                (frequencies))))))
 
 (defspec uniform-does-not-exceed-bounds
   test-opts
