@@ -1,6 +1,6 @@
 (ns kixi.stats.random
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI]]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma]]
             [clojure.data.avl :as avl]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
@@ -24,15 +24,6 @@
     (* (sqrt (* -2 (log (rand-double r1))))
        (cos (* 2 PI (rand-double r2))))))
 
-(def ^:no-doc log-factorial
-  (let [memo (atom (avl/sorted-map 1 0.0))]
-    (fn [m]
-      (or (get @memo m)
-          (let [[m' x'] (avl/nearest @memo < m)]
-            (loop [m' (inc m') x' (+ x' (log m'))]
-              (swap! memo assoc m' x')
-              (if (= m' m) x' (recur (inc m') (+ x' (log (inc m')))))))))))
-
 (defn ^:no-doc rand-binomial-btrs
   [n p rng]
   (let [spq (sqrt (* n p (- 1 p)))
@@ -52,9 +43,9 @@
             (let [alpha (* (+ 2.83 (/ 5.2 b)) spq)
                   lpq (log (/ p (- 1 p)))
                   m (int (* (inc n) p))
-                  h (+ (log-factorial m) (log-factorial (- n m)))
+                  h (+ (log-gamma (inc m)) (log-gamma (inc (- n m))))
                   v (* v (/ alpha (+ (/ a (* us us)) b)))]
-              (if (<= v (+ (- h (log-factorial k) (log-factorial (- n k)))
+              (if (<= v (+ (- h (log-gamma (inc k)) (log-gamma (inc (- n k))))
                            (* (- k m) lpq)))
                 k
                 (recur (next-rng rng)))))
@@ -75,6 +66,7 @@
   (cond
     (= p 0.0) 0
     (= p 1.0) n
+    (< n 500) (rand-binomial-simple n p rng)
     (and (> p 0.5) (> (* n (- 1 p)) 10))
     (- n (rand-binomial-btrs n (- 1 p) rng))
     (and (<= p 0.5) (> (* n p) 10))

@@ -26,6 +26,10 @@
   #?(:clj  (Math/log x)
      :cljs (js/Math.log x)))
 
+(defn log1p [x]
+  #?(:clj  (Math/log1p x)
+     :cljs (js/Math.log (inc x))))
+
 (defn exp [x]
   #?(:clj  (Math/exp x)
      :cljs (js/Math.exp x)))
@@ -38,10 +42,16 @@
   #?(:clj  (Math/sin x)
      :cljs (js/Math.sin x)))
 
+(defn floor [x]
+  #?(:clj  (Math/floor x)
+     :cljs (js/Math.floor x)))
+
 
 ;;;; Gamma
 
-(def ^:no-doc SQRT_TWO_PI 2.506628274631000502)
+(def ^:no-doc SQRT_2_PI 2.506628274631000502)
+
+(def ^:no-doc HALF_LOG_2_PI (* 0.5 (log (* 2.0 PI))))
 
 (def ^:no-doc LANCZOS
   [[14 3.6899182659531625E-6] [13 -2.6190838401581408E-5]
@@ -85,7 +95,7 @@
 (def ^:no-doc CB
   0.577215664901532860606512090082402E+00)
 
-(def lanczos-g
+(def LANCZOS_G
   "The Lanczos constant"
   (/ 607 128))
 
@@ -96,7 +106,8 @@
      0.9999999999999971))
 
 (defn inv-gamma-1pm1
-  "Computes the function `(dec (/ 1 (gamma (inc x))))`"
+  "Computes the function `(dec (/ 1 (gamma (inc x))))`
+  for -0.5 <= x <= 0.5"
   [x]
   (let [t (if (<= x 0.5) x (- (- x 0.5) 0.5))]
     (if (< t 0)
@@ -113,6 +124,30 @@
           (* (/ t x) (dec c))
           (* x c))))))
 
+(defn log-gamma-1p
+  "Computes the function `(ln (gamma (inc x)))`
+  for -0.5 <= x <= 0.5"
+  [x]
+  (- (log1p (inv-gamma-1pm1 x))))
+
+(defn log-gamma
+  "Computes the value of ln(Γx)"
+  [x]
+  (cond
+    (< x 0.5) (- (log-gamma-1p x) (log x))
+    (<= x 2.5) (log-gamma-1p (dec x))
+    (<= x 8.0) (let [n (int (floor (- x 1.5)))]
+                 (+ (log-gamma-1p (- x (inc n)))
+                    (loop [i 1
+                           p 1.0]
+                      (if (<= i n)
+                        (recur (inc i) (* p (- x i)))
+                        (log p)))))
+    :else (let [t (+ x LANCZOS_G 0.5)]
+            (+ (- (* (+ x 0.5) (log t)) t)
+               HALF_LOG_2_PI
+               (log (/ (lanczos-approximation x) x))))))
+
 (defn gamma
   "Computes the value of Γx"
   [x]
@@ -127,8 +162,8 @@
           (if (< t 0.5)
             (recur (inc t) (* p t))
             (/ 1 (* p (inc (inv-gamma-1pm1 (dec t))))))))
-      (let [y (+ abs-x lanczos-g 0.5)
-            abs-g (* (/ SQRT_TWO_PI abs-x)
+      (let [y (+ abs-x LANCZOS_G 0.5)
+            abs-g (* (/ SQRT_2_PI abs-x)
                      (pow y (+ abs-x 0.5))
                      (exp (- y))
                      (lanczos-approximation abs-x))]

@@ -233,11 +233,3 @@
   (for-all [seed gen/int]
     (is (false? (sut/draw (sut/bernoulli 0.0) {:seed seed})))
     (is (true? (sut/draw (sut/bernoulli 1.0) {:seed seed})))))
-
-(defspec log-factorial-memoizes-correct-values
-  test-opts
-  (for-all [n gen/s-pos-int]
-    (is (= (sut/log-factorial n)
-           (->> (range 1 (inc n))
-                (map log)
-                (reduce +))))))

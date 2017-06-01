@@ -1,11 +1,14 @@
 (ns kixi.stats.math-test
-  (:require [kixi.stats.math :as sut]
+  (:require [kixi.stats.math :as sut :refer [abs]]
             #?@(:cljs
                 [[cljs.test :refer-macros [is deftest]]]
                 :clj
                 [[clojure.test :refer [is deftest]]])))
 
-(def known-gammas
+(defn approx= [a b tol]
+  (< (abs (- a b)) tol))
+
+(def gamma-point-values
   [3.99121704344051E-26 -1.01776034607733E-24 2.4935128478894578E-23
    -5.859755192540227E-22 1.3184449183215509E-20 -2.834656574391336E-19
    5.8110459775022386E-18 -1.133153965612936E-16 2.0963348363839324E-15
@@ -24,7 +27,10 @@
    2.772432298633372E16 5.4062429823350726E17 1.1082798113786905E19
    2.3828015944641842E20 5.361303587544415E21 1.2599063430729375E23])
 
-(deftest gamma-matches-known-values []
+(def log-gamma-point-values
+  [0.5723649429247001 -0.1207822376352452 0.2846828704729192 1.2009736023470743 2.453736570842442 3.9578139676187165 5.662562059857142 7.534364236758734 9.549267257301 11.689333420797267 13.940625219403763 16.29200047656724 18.73434751193645 21.260076156244708 23.862765841689086 26.536914491115613 29.277754515040815 32.08111489594735 34.94331577687682 37.8610865089611 40.8315009745308 43.85192586067516 46.91997879580878 50.03349410501916 53.19049452616927])
+
+(deftest gamma-returns-correct-point-values []
   (is (= 1.0 (sut/gamma 1)))
   (is (= 1.0 (sut/gamma 2)))
   (is (= 2.0 (sut/gamma 3)))
@@ -34,5 +40,9 @@
   (is (= 720.0 (sut/gamma 7)))
   (is (= 5040.0 (sut/gamma 8)))
   (is (= (mapv sut/gamma (range -25.5 25))
-         known-gammas)))
+         gamma-point-values)))
+
+(deftest log-gamma-returns-correct-point-values
+  (is (->> (map vector (range 0.5 25) log-gamma-point-values)
+           (every? (fn [[x y]] (approx= (sut/log-gamma x) y 1e-15))))))
 
