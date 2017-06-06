@@ -103,6 +103,12 @@
               (/ 1 k))
          a1 v))))
 
+(defn ^:no-doc rand-beta
+  [alpha beta rng]
+  (let [[r1 r2] (split rng)
+        u (rand-gamma alpha r1)]
+    (/ u (+ u (rand-gamma beta r2)))))
+
 (defn ^:no-doc rand-int-tuple
   [a b rng]
   (let [[r1 r2] (split rng)]
@@ -245,9 +251,21 @@
     [alpha beta]
     ISampleable
     (sample-1 [this rng]
+      (rand-beta alpha beta rng))
+    (sample-n [this n rng]
+      (default-sample-n this n rng))
+    #?@(:clj (clojure.lang.ISeq
+              (seq [this] (sampleable->seq this)))
+        :cljs (ISeqable
+               (-seq [this] (sampleable->seq this)))))
+
+(deftype ^:no-doc BetaBinomial
+    [n alpha beta]
+    ISampleable
+    (sample-1 [this rng]
       (let [[r1 r2] (split rng)
-            u (rand-gamma alpha r1)]
-        (/ u (+ u (rand-gamma beta r2)))))
+            p (rand-beta alpha beta r1)]
+        (rand-binomial n p r2)))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     #?@(:clj (clojure.lang.ISeq
@@ -338,6 +356,62 @@
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
 
+(deftype ^:no-doc Multinomial
+    [n ps]
+    ISampleable
+    (sample-1 [this rng]
+      (loop [coll (transient []) n n
+             rem 1 rng rng
+             ps ps]
+        (if (and (seq ps) (pos? rem))
+          (let [p (first ps)
+                x (rand-binomial n (/ p rem) rng)]
+            (recur (conj! coll x) (- n x)
+                   (- rem p) (next-rng rng)
+                   (rest ps)))
+          (persistent! coll))))
+    (sample-n [this n rng]
+      (default-sample-n this n rng))
+    IDiscrete
+    (sample-frequencies [this n rng]
+      (frequencies (sample-n this n rng)))
+    #?@(:clj (clojure.lang.ISeq
+              (seq [this] (sampleable->seq this)))
+        :cljs (ISeqable
+               (-seq [this] (sampleable->seq this)))))
+
+(deftype ^:no-doc Dirichlet
+    [as]
+    ISampleable
+    (sample-1 [this rng]
+      (let [rs (split-n rng (count as))
+            xs (map #(rand-gamma %1 %2) as rs)
+            s (apply + xs)]
+        (mapv #(/ % s) xs)))
+    (sample-n [this n rng]
+      (default-sample-n this n rng))
+    #?@(:clj (clojure.lang.ISeq
+              (seq [this] (sampleable->seq this)))
+        :cljs (ISeqable
+               (-seq [this] (sampleable->seq this)))))
+
+(deftype ^:no-doc DirichletMultinomial
+    [n as]
+    ISampleable
+    (sample-1 [this rng]
+      (let [[r1 r2] (split rng)
+            ps (sample-1 (->Dirichlet as) r1)]
+        (sample-1 (->Multinomial n ps) r2)))
+    (sample-n [this n rng]
+      (default-sample-n this n rng))
+    IDiscrete
+    (sample-frequencies [this n rng]
+      (frequencies (sample-n this n rng)))
+    #?@(:clj (clojure.lang.ISeq
+              (seq [this] (sampleable->seq this)))
+        :cljs (ISeqable
+               (-seq [this] (sampleable->seq this)))))
+
 
 ;;;; Public API
 
@@ -383,6 +457,12 @@
   [{:keys [alpha beta] :or {alpha 1.0 beta 1.0}}]
   (->Beta alpha beta))
 
+(defn beta-binomial
+  "Returns a beta distribution.
+  Params: n ∈ ℕ, {:alpha ∈ ℝ, :beta ∈ ℝ}"
+  [n {:keys [alpha beta] :or {alpha 1.0 beta 1.0}}]
+  (->BetaBinomial n alpha beta))
+
 (defn weibull
   "Returns a weibull distribution.
   Params: {:shape ∈ ℝ >= 0, :scale ∈ ℝ >= 0}"
@@ -415,6 +495,26 @@
   Probabilities should be >= 0 and sum to 1"
   [ks ps]
   (->Categorical ks ps))
+
+(defn multinomial
+  "Returns a multinomial distribution.
+  Params: n ∈ ℕ > 0, [p1, ..., pn]
+  where p1...pn are probabilities.
+  Probabilities should be >= 0 and sum to 1"
+  [n ps]
+  (->Multinomial n ps))
+
+(defn dirichlet
+  "Returns a Dirichlet distribution.
+  Params: [a1...an] ∈ ℝ >= 0"
+  [as]
+  (->Dirichlet as))
+
+(defn dirichlet-multinomial
+  "Returns a Dirichlet-multinomial distribution.
+  Params: n ∈ ℕ, [a1...an] ∈ ℝ >= 0"
+  [n as]
+  (->DirichletMultinomial n as))
 
 (defn draw
   "Returns a single variate from the distribution.

@@ -5,8 +5,8 @@
      :cljs js/Math.PI))
 
 (defn abs [x]
-  #?(:clj  (Math/abs x)
-     :cljs (js/Math.abs x)))
+  (cond-> x
+    (< x 0) -))
 
 (defn sqrt [x]
   #?(:clj  (Math/sqrt x)
@@ -45,6 +45,9 @@
 (defn floor [x]
   #?(:clj  (Math/floor x)
      :cljs (js/Math.floor x)))
+
+(defn equal [x y e]
+  (<= (abs (- y x)) e))
 
 
 ;;;; Gamma
