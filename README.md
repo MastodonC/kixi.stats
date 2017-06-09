@@ -6,12 +6,16 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 
 * Bernoulli
 * Beta
+* Beta-binomial
 * Binomial
 * Categorical
 * Chi-Squared
+* Dirichlet
+* Dirichlet-multinomial
 * Exponential
 * F
 * Gamma
+* Multinomial
 * Normal
 * Poisson
 * Uniform

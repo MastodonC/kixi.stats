@@ -1,7 +1,7 @@
 (ns kixi.stats.random-test
   (:require [kixi.stats.random :as sut]
             [kixi.stats.core :as kixi]
-            [kixi.stats.math :refer [gamma log]]
+            [kixi.stats.math :refer [gamma log equal]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check]
             #?@(:cljs
@@ -21,12 +21,19 @@
   "Returns a double between 0 and 1 inclusive"
   (gen/fmap #(* % 0.001) (gen/such-that #(<= % 1000) gen/nat)))
 
+(def gen-small-n
+  (gen/choose 1 10))
+
 (def gen-rate
   (gen/such-that pos? gen-probability))
 
+(def gen-alphas
+  "Returns a vector of alphas"
+  (gen/vector gen/s-pos-int 1 100))
+
 (def gen-probabilities
   "Returns a vector of probabilities which sum to 1.0"
-  (->> (gen/not-empty (gen/vector gen/s-pos-int))
+  (->> gen-alphas
        (gen/fmap (fn [vector]
                    (let [sum (apply + vector)]
                      (->> (concat vector [0 0])
@@ -134,36 +141,67 @@
            ss (+ ss (* (- e m') (- e m)))
            ci (* (/ ss n') 0.1)]
        (cond
-         (> n' 1000000) (reduced false)
-         (and (> n' 100)
+         (> n' 10000) (reduced false)
+         (and (> n'  100)
               (<= (- mean ci) m' (+ mean ci)))
          (reduced true)
          :else [n' m' ss])))
     ([acc] acc)))
 
+(defn multivariate-reducer
+  [rfs]
+  (fn
+    ([] (mapv #(%) rfs))
+    ([acc e]
+     (let [acc (mapv #(if (reduced? %2)
+                        %2
+                        (%1 %2 %3)) rfs acc e)
+           [done run res] (reduce (fn [[done run res] x]
+                                    (if (reduced? x)
+                                      [(inc done) run (conj res (unreduced x))]
+                                      [done (inc run) res]))
+                                  [0 0 []] acc)]
+       (if (or (zero? run)
+               (and (= run 1) (every? true? res)))
+         (reduced (mapv #(if (reduced? %1)
+                           (unreduced %1)
+                           false) acc))
+         acc)))
+    ([acc]
+     (let [results (->> (mapv #(%1 %2) rfs acc)
+                        (group-by identity))]
+       (<= (count (get results false)) 1)))))
+
 (defn converges-to-mean? [mean distribution]
-  (transduce identity (mean-convergence-reducer mean) distribution))
+  (if (sequential? mean)
+    (let [rfs (-> (map mean-convergence-reducer mean)
+                  (multivariate-reducer))]
+      (transduce identity rfs distribution))
+    (transduce identity (mean-convergence-reducer mean) distribution)))
 
 (defspec sample-means-converge-to-parameter
-  test-opts
+  {:num-tests 1 :par 4}
   (for-all [seed gen/int
             a gen/int
             b gen/int
             r gen-rate
             s gen-shape
             p gen-probability
+            ps gen-probabilities
             alpha gen-pos-real
             beta gen-pos-real
             n gen/nat
             k gen/s-pos-int
-            d gen-dof]
+            d gen-dof
+            small-n gen-small-n]
     (is (converges-to-mean? (+ a (/ (- b a) 2))
                             (sut/uniform a b)))
     (is (converges-to-mean? (/ 1 r)
                             (sut/exponential r)))
     (is (converges-to-mean? (* n p)
                             (sut/binomial {:n n :p p})))
-    (is (converges-to-mean? a (sut/normal {:mu a :sd r})))
+    (is (converges-to-mean? a
+                            (sut/normal {:mu a :sd r})))
     (is (converges-to-mean? (/ s r)
                             (sut/gamma {:shape s :scale (/ 1 r)})))
     (is (converges-to-mean? (/ alpha (+ alpha beta))
@@ -172,10 +210,14 @@
                             (sut/weibull {:shape alpha :scale beta})))
     (is (converges-to-mean? (/ s r)
                             (sut/gamma {:shape s :scale (/ 1 r)})))
-    (is (converges-to-mean? k (sut/chi-squared k)))
+    (is (converges-to-mean? k
+                            (sut/chi-squared k)))
     (is (converges-to-mean? (/ d (- d 2))
                             (sut/f k d)))
-    (is (converges-to-mean? alpha (sut/poisson alpha)))))
+    (is (converges-to-mean? alpha
+                            (sut/poisson alpha)))
+    (is (converges-to-mean? (mapv #(* small-n %) ps)
+                            (sut/multinomial small-n ps)))))
 
 (defspec sample-summary-returns-categorical-sample-frequencies
   test-opts
@@ -233,3 +275,16 @@
   (for-all [seed gen/int]
     (is (false? (sut/draw (sut/bernoulli 0.0) {:seed seed})))
     (is (true? (sut/draw (sut/bernoulli 1.0) {:seed seed})))))
+
+(defspec multinomial-sample-sums-to-n
+  test-opts
+  (for-all [seed gen/int
+            n gen-small-n
+            probs gen-probabilities]
+    (is (= n (apply + (sut/draw (sut/multinomial n probs) {:seed seed}))))))
+
+(defspec dirichlet-sample-sums-to-1
+  test-opts
+  (for-all [seed gen/int
+            as gen-alphas]
+    (is (equal 1.0 (apply + (sut/draw (sut/dirichlet as) {:seed seed})) 1e-15))))
