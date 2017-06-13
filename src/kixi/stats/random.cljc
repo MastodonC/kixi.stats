@@ -1,6 +1,6 @@
 (ns kixi.stats.random
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma]]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma sq floor]]
             [clojure.data.avl :as avl]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
@@ -24,54 +24,109 @@
     (* (sqrt (* -2 (log (rand-double r1))))
        (cos (* 2 PI (rand-double r2))))))
 
-(defn ^:no-doc rand-binomial-btrs
-  [n p rng]
-  (let [spq (sqrt (* n p (- 1 p)))
-        b (+ 1.15 (* 2.53 spq))
-        a (+ -0.0873 (* 0.0248 b) (* 0.01 p))
-        c (+ 0.5 (* n p))
-        vr (- 0.92 (/ 4.2 b))]
-    (loop [rng rng]
-      (let [[r1 r2] (split rng)
-            u (- (rand-double r1) 0.5)
-            us (- 0.5 (abs u))
-            v (rand-double r2)
-            k (int (+ (* (+ (* 2.0 (/ a us)) b) u) c))]
-        (if (<= 0 k n)
-          (if (and (>= us 0.07) (<= v vr))
-            k
-            (let [alpha (* (+ 2.83 (/ 5.2 b)) spq)
-                  lpq (log (/ p (- 1 p)))
-                  m (int (* (inc n) p))
-                  h (+ (log-gamma (inc m)) (log-gamma (inc (- n m))))
-                  v (* v (/ alpha (+ (/ a (* us us)) b)))]
-              (if (<= v (+ (- h (log-gamma (inc k)) (log-gamma (inc (- n k))))
-                           (* (- k m) lpq)))
-                k
-                (recur (next-rng rng)))))
-          (recur (next-rng rng)))))))
+(defn ^:no-doc btrd-f
+  [k]
+  (case k
+    0 0.08106146679532726
+    1 0.04134069595540929
+    2 0.02767792568499834
+    3 0.02079067210376509
+    4 0.01664469118982119
+    5 0.01387612882307075
+    6 0.01189670994589177
+    7 0.01041126526197209
+    8 0.009255462182712733
+    9 0.008330563433362871
+    (let [k' (inc k) k2' (sq k')]
+      (double (/ (- 1/12 (/ (- 1/360 (/ 1/1260 k2')) k2')) k')))))
 
-(defn ^:no-doc rand-binomial-simple
+(defn ^:no-doc rand-binomial-btrd
+  "Algorithm BTRD from \"The Generation of Binomial Random Variates\", Wolfgang Hormann, p6"
   [n p rng]
-  (loop [i 0 rng rng result 0]
-    (if (< i n)
-      (recur (inc i) (next-rng rng)
-             (if (< (rand-double rng) p)
-               (inc result)
-               result))
-      result)))
+  (if (> p 0.5)
+    (- n (rand-binomial-btrd n (- 1 p) rng))
+    (let [m (int (floor (* (inc n) p)))
+          q (- 1 p)
+          r (/ p q)
+          nr (* (inc n) r)
+          npq (* n p q)
+          rnpq (sqrt npq)
+          b (+ 1.15 (* 2.53 rnpq))
+          a (+ -0.0873 (* 0.0248 b) (* 0.01 p))
+          c (+ (* n p) 0.5)
+          alpha (* (+ 2.83 (/ 5.1 b)) rnpq)
+          vr (- 0.92 (/ 4.2 b))
+          urvr (* 0.86 vr)]
+      (loop [rng rng]
+        (let [v (rand-double rng)]
+          (if (<= v urvr)
+            (let [u (- (/ v vr) 0.43)]
+              (int (floor (+ (* (+ (/ (* 2 a) (- 0.5 (abs u))) b) u) c))))
+            (let [[r1 r2] (split rng)
+                  [u v] (if (>= v vr)
+                          [(- (rand-double r1) 0.5) v]
+                          (let [u (- (/ v vr) 0.93)]
+                            [(- (* 0.5 (if (pos? u) 1 -1)) u) (* (rand-double r1) vr)]))
+                  us (- 0.5 (abs u))
+                  k (int (floor (+ (* (+ (* 2 (/ a us)) b) u) c)))]
+              (if (<= 0 k n)
+                (let [v (* v (/ alpha (+ (/ a (sq us)) b)))
+                      km (abs (- k m))]
+                  (if (<= km 15)
+                    (let [f 1
+                          [f v] (cond
+                                  (< m k) (loop [i m
+                                                 f f]
+                                            (if (= i k)
+                                              [f v]
+                                              (recur (inc i) (* f (/ nr (- i r))))))
+                                  (> m k) (loop [i k
+                                                 v v]
+                                            (if (= i m)
+                                              [f v]
+                                              (recur (inc i) (* v (/ nr (- i r))))))
+                                  :else [f v])]
+                      (if (<= v f) k (recur r2)))
+                    (let [v (log v)
+                          p (* (/ km npq) (+ (/ (+ (* (+ (/ km 3) 0.625) km) 1/6) npq) 0.5))
+                          t (/ (* (- km) km) (* 2 npq))]
+                      (cond
+                        (< v (- t p)) k
+                        (> v (+ t p)) (recur r2)
+                        :else
+                        (let [nm (inc (- n m))
+                              h (+ (* (+ m 0.5) (log (/ (inc m) (* r nm)))) (btrd-f m) (btrd-f (- n m)))
+                              nk (inc (- n k))]
+                          (if (<= v (+ h
+                                       (* (inc n) (log (/ nm nk)))
+                                       (* (+ k 0.5) (log (/ (* nk r) (inc k))))
+                                       (- (btrd-f k))
+                                       (- (btrd-f (- n k)))))
+                            k
+                            (recur r2)))))))
+                (recur r2)))))))))
+
+(defn ^:no-doc rand-binomial-binv
+  [n p rng]
+  (if (> p 0.5)
+    (- n (rand-binomial-binv n (- 1 p) rng))
+    (let [cutoff 110
+          q (- 1 p)
+          s (/ p q)]
+      (loop [ix 0 f (pow q n) u (rand-double rng)]
+        (cond
+          (< u f) ix
+          (>= ix cutoff) (rand-binomial-binv n p (next-rng rng))
+          :else (recur (inc ix) (* f s (/ (- n ix) (inc ix))) (- u f)))))))
 
 (defn ^:no-doc rand-binomial
   [n p rng]
-  (cond
-    (= p 0.0) 0
-    (= p 1.0) n
-    (< n 500) (rand-binomial-simple n p rng)
-    (and (> p 0.5) (> (* n (- 1 p)) 10))
-    (- n (rand-binomial-btrs n (- 1 p) rng))
-    (and (<= p 0.5) (> (* n p) 10))
-    (rand-binomial-btrs n p rng)
-    :else (rand-binomial-simple n p rng)))
+  (let [p (max 0.0 (min p 1.0))]
+    (cond
+      (= p 0.0) 0
+      (= p 1.0) n
+      (< (* n p) 14) (rand-binomial-binv n p rng)
+      :else (rand-binomial-btrd n p rng))))
 
 (defn ^:no-doc rand-gamma
   [k rng]
