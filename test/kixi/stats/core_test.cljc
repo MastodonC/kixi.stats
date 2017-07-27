@@ -174,11 +174,17 @@
 
 (defn cramers-v'
   [fx fy coll]
-  (let [count-values (fn [m]
-                       (into {} (for [[k v] m] [k (count v)]) ))
-        x-counts (count-values (group-by fx coll))
-        y-counts (count-values (group-by fy coll))
-        xy-counts (count-values (group-by (juxt fx fy) coll))
+  (let [[x-counts y-counts xy-counts] (reduce
+                                       (fn [[x-acc y-acc xy-acc] element]
+                                         (let [value-x (fx element)
+                                               value-y (fy element)
+                                               increment-count (fn [m k] (update m k (fnil inc 0)))
+                                               x-acc' (increment-count x-acc value-x)
+                                               y-acc' (increment-count y-acc value-y)
+                                               xy-acc' (increment-count xy-acc [value-x value-y])]
+                                           [x-acc' y-acc' xy-acc']))
+                                       [{} {} {}]
+                                       coll)
         n (clojure.core/count coll)
         chi-squared  (reduce-kv (fn [acc k v]
                                   (let [n1 (get x-counts (first k))
@@ -464,15 +470,15 @@
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
-           (is (=ish (transduce identity (kixi/covariance-matrix {:x :x :y :y :z :z}) coll)
-                     (covariance-matrix' coll)))))
+    (is (=ish (transduce identity (kixi/covariance-matrix {:x :x :y :y :z :z}) coll)
+              (covariance-matrix' coll)))))
 
 (defspec correlation-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
-           (is (=ish (transduce identity (kixi/correlation :x :y) coll)
-                     (correlation' :x :y coll)))))
+    (is (=ish (transduce identity (kixi/correlation :x :y) coll)
+              (correlation' :x :y coll)))))
 
 (deftest correlation-test
   (is (nil? (transduce identity (kixi/correlation :x :y) [])))
@@ -482,15 +488,15 @@
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
-           (is (=ish (transduce identity (kixi/cramers-v :x :y) coll)
-                     (cramers-v' :x :y coll)))))
+     (is (=ish (transduce identity (kixi/cramers-v :x :y) coll)
+               (cramers-v' :x :y coll)))))
 
 (defspec correlation-matrix-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
-           (is (=ish (transduce identity (kixi/correlation-matrix {:x :x :y :y :z :z}) coll)
-                     (correlation-matrix' coll)))))
+    (is (=ish (transduce identity (kixi/correlation-matrix {:x :x :y :y :z :z}) coll)
+              (correlation-matrix' coll)))))
 
 (defspec simple-linear-regression-spec
   test-opts

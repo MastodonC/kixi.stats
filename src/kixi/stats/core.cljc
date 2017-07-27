@@ -306,15 +306,12 @@
      (let [k1 (fx row)
            k2 (fy row)
            k12 [k1 k2]
-           increment-count (fn [m k]
-                             (if (get m k)
-                               (update m k inc)
-                               (assoc m k 1)))
-           f1-new (increment-count f1 k1)
-           f2-new (increment-count f2 k2)
-           f12-new (increment-count f12 k12)
-           n-new (inc n)]
-       [f1-new f2-new f12-new n-new]))
+           increment-count (fn [m k] (update m k (fnil inc 0)))
+           f1' (increment-count f1 k1)
+           f2' (increment-count f2 k2)
+           f12' (increment-count f12 k12)
+           n' (inc n)]
+       [f1' f2' f12' n']))
     ([[f1 f2 f12 n]]
      (let [r (clojure.core/count f1)
            r-tilde (when (> n 1) (- r (/ (sq (dec r)) (- n 1))))
@@ -328,7 +325,7 @@
                                                 (/ (* n1 n2) n)))))
                                   0
                                   f12)]
-       (when (and  r-tilde k-tilde (> r-tilde 1) (> k-tilde 1))
+       (when (and r-tilde k-tilde (> r-tilde 1) (> k-tilde 1))
          (sqrt (/ (/ chi-squared n) (min (- r-tilde 1) (- k-tilde 1)))))))))
 
 (defn sum-squares
