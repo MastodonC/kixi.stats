@@ -197,7 +197,7 @@
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which
   returns a number, estimates the unbiased covariance of those functions over
   inputs.
-  
+
   Ignores any inputs where `(fx input)` or `(fy input)` are nil. If no
   inputs have both x and y, returns nil."
   [fx fy]
@@ -295,6 +295,38 @@
        ...}"
   [kvs]
   (fuse-matrix correlation kvs))
+
+(defn cramers-v
+  "Cramer's Phi is the intercorrelation of two discrete variables and may be used with variables having two or more levels. It gives a value between 0 and +1 (inclusive).
+  Given two functions: (fx input) and (fy input), each of which returns a the relevant discrete value."
+  [fx fy]
+  (fn
+    ([] [{} {} {} 0])
+    ([[f1 f2 f12 n] row]
+     (let [k1 (fx row)
+           k2 (fy row)
+           k12 [k1 k2]
+           increment-count (fn [m k] (update m k (fnil inc 0)))
+           f1' (increment-count f1 k1)
+           f2' (increment-count f2 k2)
+           f12' (increment-count f12 k12)
+           n' (inc n)]
+       [f1' f2' f12' n']))
+    ([[f1 f2 f12 n]]
+     (let [r (clojure.core/count f1)
+           r-tilde (when (> n 1) (- r (/ (sq (dec r)) (- n 1))))
+           k (clojure.core/count f2)
+           k-tilde (when (> n 1) (- k (/ (sq (dec k)) (- n 1))))
+           chi-squared (reduce-kv (fn [acc k v]
+                                    (let [n1 (get f1 (first k))
+                                          n2 (get f2 (last k))
+                                          n12 v]
+                                      (+ acc (/ (sq (- n12 (/ (* n1 n2) n)))
+                                                (/ (* n1 n2) n)))))
+                                  0
+                                  f12)]
+       (when (and r-tilde k-tilde (> r-tilde 1) (> k-tilde 1))
+         (sqrt (/ (/ chi-squared n) (min (- r-tilde 1) (- k-tilde 1)))))))))
 
 (defn sum-squares
   [fx fy]
