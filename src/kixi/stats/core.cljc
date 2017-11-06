@@ -20,6 +20,17 @@
     ([n _] (inc n))
     ([n] n)))
 
+(defn count-when
+  "Calculates the count of inputs for which `pred` returns truthy."
+  [pred]
+  (fn
+    ([] 0)
+    ([n x]
+     (if (pred x)
+       (inc n)
+       n))
+    ([n] n)))
+
 (def arithmetic-mean
   "Calculates the arithmetic mean of numeric inputs."
   (fn
