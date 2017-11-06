@@ -23,11 +23,12 @@
 (def arithmetic-mean
   "Calculates the arithmetic mean of numeric inputs."
   (fn
-    ([] [0 0])
-    ([[s c :as acc] e]
+    ([] [0.0 0.0])
+    ([[^double s ^double c :as acc] e]
      (if (nil? e)
        acc
-       [(+ s e) (inc c)]))
+       (let [e (double e)]
+         [(+ s e) (inc c)])))
     ([[s c]]
      (when-not (zero? c)
        (/ s c)))))
@@ -67,11 +68,12 @@
 (def variance-s
   "Estimates an unbiased variance of numeric inputs."
   (fn
-    ([] [0 0 0])
-    ([[c m ss :as acc] e]
+    ([] [0.0 0.0 0.0])
+    ([[^double c ^double m ^double ss :as acc] e]
      (if (nil? e)
        acc
-       (let [c' (inc c)
+       (let [e  (double e)
+             c' (inc c)
              m' (+ m (/ (- e m) c'))]
          [c' m' (+ ss (* (- e m') (- e m)))])))
     ([[c m ss]]
@@ -119,11 +121,12 @@
   "Estimates the sample skewness of numeric inputs.
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance."
   (fn
-    ([] [0 0 0 0])
-    ([[c m1 m2 m3 :as acc] e]
+    ([] [0.0 0.0 0.0 0.0])
+    ([[^double c ^double m1 ^double m2 ^double m3 :as acc] e]
      (if (nil? e)
        acc
-       (let [c'  (inc c)
+       (let [e   (double e)
+             c'  (inc c)
              d   (- e m1)
              dc  (/ d c')
              m1' (+ m1 dc)
@@ -155,11 +158,12 @@
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
   and http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
   (fn
-    ([] [0 0 0 0 0])
-    ([[c m1 m2 m3 m4 :as acc] e]
+    ([] [0.0 0.0 0.0 0.0 0.0])
+    ([[^double c ^double m1 ^double m2 ^double m3 ^double m4 :as acc] e]
      (if (nil? e)
        acc
-       (let [c'  (inc c)
+       (let [e   (double e)
+             c'  (inc c)
              d   (- e m1)
              dc  (/ d c')
              m1' (+ m1 dc)
@@ -202,13 +206,15 @@
   inputs have both x and y, returns nil."
   [fx fy]
   (fn
-    ([] [0 0 0 0])
-    ([[c mx my ss :as acc] e]
+    ([] [0.0 0.0 0.0 0.0])
+    ([[^double c ^double mx my ss :as acc] e]
      (let [x (fx e)
            y (fy e)]
        (if (or (nil? x) (nil? y))
          acc
-         (let [c'  (inc c)
+         (let [x   (double x)
+               y   (double y)
+               c'  (inc c)
                mx' (+ mx (/ (- x mx) c'))
                my' (+ my (/ (- y my) c'))]
            [c' mx' my'
@@ -261,13 +267,15 @@
   http://mathworld.wolfram.com/CorrelationCoefficient.html."
   [fx fy]
   (fn
-    ([] [0 0 0 0 0 0])
-    ([[c mx my ssx ssy ssxy :as acc] e]
+    ([] [0.0 0.0 0.0 0.0 0.0 0.0])
+    ([[^double c ^double mx ^double my ^double ssx ^double ssy ^double ssxy :as acc] e]
      (let [x (fx e)
            y (fy e)]
        (if (or (nil? x) (nil? y))
          acc
-         (let [c'  (inc c)
+         (let [x   (double x)
+               y   (double y)
+               c'  (inc c)
                mx' (+ mx (/ (- x mx) c'))
                my' (+ my (/ (- y my) c'))]
            [c' mx' my'
@@ -331,13 +339,15 @@
 (defn sum-squares
   [fx fy]
   (fn
-    ([] [0 0 0 0 0 0])
-    ([[c mx my ssx ssy ssxy :as acc] e]
+    ([] [0.0 0.0 0.0 0.0 0.0 0.0])
+    ([[^double c ^double mx ^double my ^double ssx ^double ssy ^double ssxy :as acc] e]
      (let [x (fx e)
            y (fy e)]
        (if (or (nil? x) (nil? y))
          acc
-         (let [c'  (inc c)
+         (let [x   (double x)
+               y   (double y)
+               c'  (inc c)
                mx' (+ mx (/ (- x mx) c'))
                my' (+ my (/ (- y my) c'))]
            [c' mx' my'
