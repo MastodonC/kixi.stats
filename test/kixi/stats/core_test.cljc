@@ -314,6 +314,16 @@
 (deftest count-test
   (is (zero? (transduce identity kixi/count []))))
 
+(defspec count-when-spec
+  test-opts
+  (for-all [xs (gen/vector numeric)]
+           (let [pred (kixi/somef pos?)]
+             (is (= (transduce identity (kixi/count-when pred) xs)
+                    (count (filter pred xs)))))))
+
+(deftest count-when-test
+  (is (zero? (transduce identity (kixi/count-when pos?) []))))
+
 (defspec arithmetic-mean-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
