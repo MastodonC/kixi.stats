@@ -17,7 +17,8 @@
                 :par       4})
 
 (defn infinite? [x]
-  (and (float? x) (.isInfinite x)))
+  #?(:clj (and (float? x) (.isInfinite x))
+     :cljs (and (float? x) (== x js/Infinity))))
 
 (defn seq= [f]
   (fn [x y]
@@ -57,7 +58,7 @@
               e (* (abs (min x y)) e))]
       (equal x y e))))
 
-(def =ish (-> (approx= 1e-12) inf= some= map= seq=))
+(def =ish (-> (approx= 1e-11) inf= some= map= seq=))
 
 (defn arithmetic-mean'
   [coll]

@@ -38,7 +38,9 @@
     8 0.009255462182712733
     9 0.008330563433362871
     (let [k' (inc k) k2' (sq k')]
-      (double (/ (- 1/12 (/ (- 1/360 (/ 1/1260 k2')) k2')) k')))))
+      (double (/ (- 0.08333333333333333
+                    (/ (- 0.002777777777777778
+                          (/ 7.936507936507937E-4 k2')) k2')) k')))))
 
 (defn ^:no-doc rand-binomial-btrd
   "Algorithm BTRD from \"The Generation of Binomial Random Variates\", Wolfgang Hormann, p6"
@@ -88,7 +90,7 @@
                                   :else [f v])]
                       (if (<= v f) k (recur r2)))
                     (let [v (log v)
-                          p (* (/ km npq) (+ (/ (+ (* (+ (/ km 3) 0.625) km) 1/6) npq) 0.5))
+                          p (* (/ km npq) (+ (/ (+ (* (+ (/ km 3) 0.625) km) 0.1666666666666667) npq) 0.5))
                           t (/ (* (- km) km) (* 2 npq))]
                       (cond
                         (< v (- t p)) k
