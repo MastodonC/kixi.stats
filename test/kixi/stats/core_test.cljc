@@ -140,7 +140,7 @@
       nil
       (let [mean-x (mean' (map fx coll'))
             mean-y (mean' (map fy coll'))
-            c (count coll')]
+            c (double (count coll'))]
         (when-not (zero? c)
           (/ (reduce + (map #(* (- (fx %) mean-x)
                                 (- (fy %) mean-y))
@@ -351,8 +351,8 @@
 (deftest variance-test
   (is (nil?  (transduce identity kixi/variance-s [])))
   (is (zero? (transduce identity kixi/variance-s [1])))
-  (is (= 2   (transduce identity kixi/variance-s [1 3])))
-  (is (= 4   (transduce identity kixi/variance-s [1 3 5]))))
+  (is (= 2.0 (transduce identity kixi/variance-s [1 3])))
+  (is (= 4.0 (transduce identity kixi/variance-s [1 3 5]))))
 
 (defspec pvariance-spec
   test-opts
@@ -363,7 +363,7 @@
 (deftest pvariance-test
   (is (nil?  (transduce identity kixi/variance-p [])))
   (is (zero? (transduce identity kixi/variance-p [1])))
-  (is (= 4   (transduce identity kixi/variance-p [1 5]))))
+  (is (= 4.0 (transduce identity kixi/variance-p [1 5]))))
 
 (defspec standard-deviation-spec
   test-opts
