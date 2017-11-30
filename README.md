@@ -24,10 +24,12 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 **Available transducing functions:**
 
 * Count
-* Arithmetic mean
+* (Arithmetic) mean
 * Geometric mean
 * Harmonic mean
+* Median
 * Variance
+* Interquartile range
 * Standard deviation
 * Standard error
 * Skewness
@@ -83,7 +85,49 @@ Add the following dependency:
 ;;     [:y :x] -1.0, [:z :x] 1.0, [:z :y] -1.0}
 ```
 
-If you have multiple statistics to calculate over the same collection, take a look at the reducing function combinators available in [redux](https://github.com/henrygarner/redux). Redux' `fuse` will return a higher-order reducing function that can be used to execute an arbitrary number of reducing functions simultaneously.
+One advantage of using `transduce` for statistics calculation is that multiple statistics can be calculated simultaneously by composing together reducing functions. The generic combinators available in [redux](https://github.com/henrygarner/redux) or [xforms](https://github.com/cgrand/xforms) can be used together with the reducing functions in `kixi.stats`. For example, redux' `fuse` will return a higher-order reducing function that can be used to execute an arbitrary number of reducing functions simultaneously:
+
+```clojure
+(require '[kixi.stats.core :refer [mean standard-deviation]]
+         '[redux.core :refer [fuse]])
+
+;; Calculate mean and standard deviation at the same time:
+
+(->> [2 4 4 4 5 5 5 7 9]
+     (transduce identity (fuse {:mean mean :sd standard-deviation})))
+
+;; => {:mean 5.0, :sd 2.0}
+```
+
+Integration with transducers means that the wealth of core Clojure support can be applied to working with statistics. For example, `filter` can be used to constrain the elements over which statistics are calculated:
+
+```clojure
+(require '[kixi.stats.core :refer [median]])
+
+(def g5t (filter #(> % 5)))
+
+;; Calculate the median only of numbers greater than 5:
+
+(transduce gt5 median (range 10))
+
+;; => 7.5
+```
+
+So long as `xform` is a stateless transducer, we can use it to create a new reducing function locally which doesn't affect other reducing functions also being composed:
+
+```clojure
+(require '[kixi.stats.core :refer [count]])
+
+(def gt5 (filter #(> % 5)))
+
+;; Count both all numbers and those greater than 5:
+
+(transduce identity (fuse {:n count :gt5 (gt5 count)}) (range 10))
+
+;; => {:n 10, :gt5 4}
+```
+
+The `kixi.stats` API is focused primarily on statistical functions and doesn't need to be littered with exhaustive `count-when`-style specialisms. Combiantors from libraries such as [redux](https://github.com/henrygarner/redux) and Clojure itself can be used to combine those functions in sophisticated ways.
 
 **Distribution sampling**
 

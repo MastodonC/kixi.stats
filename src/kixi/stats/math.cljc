@@ -42,6 +42,10 @@
   #?(:clj  (Math/sin x)
      :cljs (js/Math.sin x)))
 
+(defn ceil [x]
+  #?(:clj  (Math/ceil x)
+     :cljs (js/Math.ceil x)))
+
 (defn floor [x]
   #?(:clj  (Math/floor x)
      :cljs (js/Math.floor x)))

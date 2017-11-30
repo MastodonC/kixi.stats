@@ -1,8 +1,24 @@
-(ns kixi.stats.random
+(ns kixi.stats.distribution
   (:refer-clojure :exclude [shuffle rand-int])
   (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma sq floor]]
             [clojure.data.avl :as avl]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
+
+(defprotocol IBounded
+  (minimum [this] "Returns the minimum x")
+  (maximum [this] "Returns the maximum x"))
+
+(defprotocol ^:no-doc IDiscrete
+  (sample-frequencies [this n rng]))
+
+(defprotocol IQuantile
+  (cdf [this x] "Returns the cumulative probability for a given x")
+  (quantile [this p] "Returns the x for a given cumulative probability"))
+
+(defprotocol ^:no-doc ISampleable
+  (sample-1 [this rng])
+  (sample-n [this n rng]))
+
 
 ;;;; Randomness helpers
 
@@ -180,26 +196,19 @@
          (reduce swap coll))))
 
 
-;;;; Protocols and protocol helpers
-
-(defprotocol ^:no-doc ISampleable
-  (sample-1 [this rng])
-  (sample-n [this n rng]))
-
-(defprotocol ^:no-doc IDiscrete
-  (sample-frequencies [this n rng]))
+;;;; Protocol helpers
 
 (defn ^:no-doc sampleable->seq
-  ([^kixi.stats.random.ISampleable distribution]
+  ([^kixi.stats.distribution.ISampleable distribution]
    (sampleable->seq distribution (make-random)))
-  ([^kixi.stats.random.ISampleable distribution rng]
+  ([^kixi.stats.distribution.ISampleable distribution rng]
    (lazy-seq
     (let [[r1 r2] (split rng)]
       (cons (sample-1 distribution r1)
             (sampleable->seq distribution r2))))))
 
 (defn ^:no-doc default-sample-n
-  [^kixi.stats.random.ISampleable distribution n rng]
+  [^kixi.stats.distribution.ISampleable distribution n rng]
   (take n (sampleable->seq distribution rng)))
 
 (declare ->Binomial)
@@ -472,6 +481,30 @@
 
 ;;;; Public API
 
+(defn iqr
+  "Returns the interquartile range"
+  [^kixi.stats.distribution.IQuantile distribution]
+  (- (quantile distribution 0.75)
+     (quantile distribution 0.25)))
+
+(defn median
+  "Returns the median"
+  [^kixi.stats.distribution.IQuantile distribution]
+  (quantile distribution 0.5))
+
+(defn summary
+  "Returns the 5-number distribution summary
+  and the interquartile range."
+  [^kixi.stats.distribution.IQuantile distribution]
+  (let [q1 (quantile distribution 0.25)
+        q3 (quantile distribution 0.75)]
+    {:min (minimum distribution)
+     :q1 q1
+     :median (quantile distribution 0.5)
+     :q3 q3
+     :max (maximum distribution)
+     :iqr (when (and q1 q3) (- q3 q1))}))
+
 (defn uniform
   "Returns a uniform distribution.
   Params: a ∈ ℝ, b ∈ ℝ"
@@ -576,18 +609,18 @@
 (defn draw
   "Returns a single variate from the distribution.
   An optional seed long will ensure deterministic results"
-  ([^kixi.stats.random.ISampleable distribution]
+  ([^kixi.stats.distribution.ISampleable distribution]
    (draw distribution {}))
-  ([^kixi.stats.random.ISampleable distribution {:keys [seed]}]
+  ([^kixi.stats.distribution.ISampleable distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-1 distribution rng))))
 
 (defn sample
   "Returns n variates from the distribution.
   An optional seed long will ensure deterministic results"
-  ([n ^kixi.stats.random.ISampleable distribution]
+  ([n ^kixi.stats.distribution.ISampleable distribution]
    (sample n distribution {}))
-  ([n ^kixi.stats.random.ISampleable distribution {:keys [seed]}]
+  ([n ^kixi.stats.distribution.ISampleable distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-n distribution n rng))))
 
@@ -596,8 +629,8 @@
   of a given length from a discrete distribution
   such as the Bernoulli, binomial or categorical.
   An optional seed long will ensure deterministic results"
-  ([n ^kixi.stats.random.IDiscrete distribution]
+  ([n ^kixi.stats.distribution.IDiscrete distribution]
    (sample-summary n distribution {}))
-  ([n ^kixi.stats.random.IDiscrete distribution {:keys [seed]}]
+  ([n ^kixi.stats.distribution.IDiscrete distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-frequencies distribution n rng))))

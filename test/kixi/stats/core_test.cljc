@@ -1,9 +1,9 @@
 (ns kixi.stats.core-test
   (:require [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
-            [clojure.test.check.properties :as prop]
             [kixi.stats.core :as kixi]
-            [kixi.stats.math :refer [abs sq pow sqrt root equal]]
+            [kixi.stats.test-helpers :as t :refer [=ish numeric]]
+            [kixi.stats.math :refer [sq pow sqrt root]]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :refer-macros [for-all]]
@@ -15,50 +15,6 @@
 
 (def test-opts {:num-tests 100
                 :par       4})
-
-(defn infinite? [x]
-  #?(:clj (and (float? x) (.isInfinite x))
-     :cljs (and (float? x) (== x js/Infinity))))
-
-(defn seq= [f]
-  (fn [x y]
-    (cond
-      (and (sequential? x) (sequential? y))
-      (every? true? (map f x y))
-      (or (sequential? x) (sequential? y))
-      false
-      :else (f x y))))
-
-(defn map= [f]
-  (fn [x y]
-    (cond
-      (and (map? x) (map? y))
-      (->> (merge-with f x y)
-           (vals)
-           (every? identity))
-      (or (map? x) (map? y))
-      false
-      :else (f x y))))
-
-(defn some= [f]
-  (fn [x y]
-    (if (and (nil? x) (nil? y))
-      true
-      (f x y))))
-
-(defn inf= [f]
-  (fn [x y]
-    (if (and (infinite? x) (infinite? y))
-      true
-      (f x y))))
-
-(defn approx= [e]
-  (fn [x y]
-    (let [e (if (or (zero? x) (zero? y))
-              e (* (abs (min x y)) e))]
-      (equal x y e))))
-
-(def =ish (-> (approx= 1e-11) inf= some= map= seq=))
 
 (defn arithmetic-mean'
   [coll]
@@ -297,22 +253,43 @@
             (sq d))
          3))))
 
-(defn finite?
-  [x]
-  #?(:clj  (or (nil? x) (Double/isFinite x))
-     :cljs (or (nil? x) (js/isFinite x))))
-
-(def numeric
-  (gen/such-that finite? (gen/one-of [gen/int gen/double (gen/return nil)])))
-
 (defspec count-spec
   test-opts
   (for-all [xs (gen/vector numeric)]
-           (is (= (transduce identity kixi/count xs)
-                  (count xs)))))
+    (is (= (transduce identity kixi/count xs)
+           (count xs)))))
 
 (deftest count-test
   (is (zero? (transduce identity kixi/count []))))
+
+#?(:clj
+   (defspec median-spec
+     test-opts
+     (for-all [xs (gen/vector numeric)]
+       (is (=ish (transduce identity kixi/median xs)
+                 (t/quantile' 0.5 xs))))))
+
+#?(:clj
+   (deftest median-test
+     (is (nil? (transduce identity kixi/median [])))
+     (is (zero? (transduce identity kixi/median [0])))
+     (is (= 42.0 (transduce identity kixi/median [42])))
+     (is (= 4.5 (transduce identity kixi/median (range 10))))))
+
+#?(:clj
+   (deftest iqr-test
+     (is (= 5.0 (transduce identity kixi/iqr (range 10))))))
+
+#?(:clj
+   (deftest histogram-test
+     (let [histogram (transduce identity kixi/histogram (range 10))]
+       (is (satisfies? kixi.stats.distribution/IBounded histogram))
+       (is (satisfies? kixi.stats.distribution/IQuantile histogram)))))
+
+#?(:clj
+   (deftest summary-test
+     (is (= (transduce identity kixi/summary (range 10))
+            {:min 0.0, :q1 2.0, :median 4.5, :q3 7.0, :max 9.0, :iqr 5.0}))))
 
 (defspec arithmetic-mean-spec
   test-opts

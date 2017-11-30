@@ -1,9 +1,10 @@
-(ns kixi.stats.random-test
-  (:require [kixi.stats.random :as sut]
+(ns kixi.stats.distribution-test
+  (:require [kixi.stats.distribution :as sut]
             [kixi.stats.core :as kixi]
             [kixi.stats.math :refer [gamma log equal]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check]
+            [kixi.stats.test-helpers :refer [=ish numeric cdf' quantile']]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :as prop :refer-macros [for-all]]
@@ -52,6 +53,54 @@
 (def gen-categories
   "Returns [[categories] [probabilities]]. Probabilities sum to 1.0"
   (gen/fmap #(vector (range (count %)) %) gen-probabilities))
+
+#?(:clj
+   (defspec histogram-spec
+     test-opts
+     (for-all [xs (gen/vector numeric)]
+       (is (= (count (transduce identity kixi/histogram xs))
+              (->> xs (remove nil?) count)))
+       (is (= (sut/minimum (transduce identity kixi/histogram xs))
+              (some->> xs (remove nil?) seq (apply min) double)))
+       (is (= (sut/maximum (transduce identity kixi/histogram xs))
+              (some->> xs (remove nil?) seq (apply max) double))))))
+
+#?(:clj
+   (defspec quantile-spec
+     test-opts
+     (for-all [xs (gen/vector numeric)
+               n (gen/choose 1 100)]
+       (let [q (double (/ 1 n))]
+         (is (=ish (sut/quantile (transduce identity kixi/histogram xs) q)
+                   (quantile' q xs)))))))
+
+#?(:clj
+   (defspec cdf-spec
+     test-opts
+     (for-all [xs (gen/vector (gen/choose 1 100) 3 100)
+               x (gen/choose 1 100)]
+       (is (=ish (sut/cdf (transduce identity kixi/histogram xs) x)
+                 (cdf' x xs))))))
+
+#?(:clj
+   (defspec bounded-spec
+     test-opts
+     (for-all [xs (gen/vector numeric)]
+       (is (= (some->> (remove nil? xs) seq (apply min) double)
+              (sut/minimum (transduce identity kixi/histogram xs))))
+       (is (= (some->> (remove nil? xs) seq (apply max) double)
+              (sut/maximum (transduce identity kixi/histogram xs)))))))
+
+#?(:clj
+   (defspec summary-spec
+     test-opts
+     (for-all [xs (gen/vector numeric)]
+       (let [summary (sut/summary (transduce identity kixi/histogram xs))]
+         (is (= #{:min :q1 :median :q3 :max :iqr}
+                (-> summary keys set)))
+         (is (if (empty? (remove nil? xs))
+               (every? nil? (vals summary))
+               (every? number? (vals summary))))))))
 
 (defspec seeded-draws-are-deterministic
   test-opts
