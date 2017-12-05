@@ -1,6 +1,8 @@
 (ns kixi.stats.core
   (:require [kixi.stats.math :refer [sq sqrt pow root]]
-            [redux.core :refer [fuse-matrix]])
+            [redux.core :refer [fuse-matrix]]
+            #?@(:clj [[kixi.stats.distribution :as d]
+                      [kixi.stats.digest :refer [t-digest]]]))
   (:refer-clojure :exclude [count]))
 
 (defn ^:no-doc somef
@@ -12,6 +14,26 @@
 (defn ^:no-doc post-complete
   [rf f]
   (completing rf #(f (rf %))))
+
+#?(:clj
+   (def histogram
+     "Calculates a histogram of numeric inputs using the t-digest with default arguments."
+     (t-digest {:compression 100})))
+
+#?(:clj
+   (def median
+     "Calculates the median of numeric inputs."
+     (post-complete histogram d/median)))
+
+#?(:clj
+   (def iqr
+     "Calculates the interquartile range of numeric inputs."
+     (post-complete histogram d/iqr)))
+
+#?(:clj
+   (def summary
+     "Calculates the five number summary of numeric inputs."
+     (post-complete histogram d/summary)))
 
 (def count
   "Calculates the count of inputs."

@@ -24,10 +24,12 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 **Available transducing functions:**
 
 * Count
-* Arithmetic mean
+* (Arithmetic) mean
 * Geometric mean
 * Harmonic mean
+* Median
 * Variance
+* Interquartile range
 * Standard deviation
 * Standard error
 * Skewness
@@ -83,14 +85,112 @@ Add the following dependency:
 ;;     [:y :x] -1.0, [:z :x] 1.0, [:z :y] -1.0}
 ```
 
-If you have multiple statistics to calculate over the same collection, take a look at the reducing function combinators available in [redux](https://github.com/henrygarner/redux). Redux' `fuse` will return a higher-order reducing function that can be used to execute an arbitrary number of reducing functions simultaneously.
+One advantage of using `transduce` for statistics calculation is that multiple statistics can be calculated simultaneously by composing together reducing functions. The generic combinators available in [redux](https://github.com/henrygarner/redux) or [xforms](https://github.com/cgrand/xforms) can be used together with the reducing functions in `kixi.stats`. For example, redux' `fuse` will return a higher-order reducing function that can be used to execute an arbitrary number of reducing functions simultaneously:
+
+```clojure
+(require '[kixi.stats.core :refer [mean standard-deviation]]
+         '[redux.core :refer [fuse]])
+
+;; Calculate mean and standard deviation at the same time:
+
+(->> [2 4 4 4 5 5 5 7 9]
+     (transduce identity (fuse {:mean mean :sd standard-deviation})))
+
+;; => {:mean 5.0, :sd 2.0}
+```
+
+Integration with transducers means that the wealth of core Clojure support can be applied to working with statistics. For example, `filter` can be used to constrain the elements over which statistics are calculated:
+
+```clojure
+(require '[kixi.stats.core :refer [median]])
+
+(def gt5 (filter #(> % 5)))
+
+;; Calculate the median only of numbers greater than 5:
+
+(transduce gt5 median (range 10))
+
+;; => 7.5
+```
+
+So long as `xform` is a stateless transducer, we can use it to create a new reducing function locally which doesn't affect other reducing functions also being composed:
+
+```clojure
+(require '[kixi.stats.core :refer [count]]
+         '[redux.core :refer [fuse]])
+
+(def gt5 (filter #(> % 5)))
+
+;; Count both all numbers and those greater than 5:
+
+(transduce identity (fuse {:n count :gt5 (gt5 count)}) (range 10))
+
+;; => {:n 10, :gt5 4}
+```
+
+The `kixi.stats` API is focused primarily on statistical functions and doesn't need to be littered with exhaustive `count-when`-style specialisms. Combiantors from libraries such as [redux](https://github.com/henrygarner/redux) and Clojure itself can be used to combine those functions in sophisticated ways.
+
+**Empricial distribution histograms**
+
+The Clojure version of `kixi.stats.core` contains reducing functions for calculating the median, interquartile range and 5-number summary using the [t-digest](https://github.com/tdunning/t-digest). They can be used like this:
+
+```clojure
+(require '[kixi.stats.core :refer [median iqr summary]]
+         '[redux.core :refer [fuse]])
+
+;; Calculate the median, iqr and 5-number summary:
+
+(->> (range 100)
+     (transduce identity (fuse {:median median
+                                :iqr iqr
+                                :summary summary})))
+
+;; => {:median 49.5, :iqr 50.0, :summary {:min 0.0, :q1 24.5, :median 49.5, :q3 74.5, :max 99.0, :iqr 50.0}}
+```
+
+Although this works fine, it should be noted that each function maintains its own digest. In cases where multiple quantiles must be calculated it's more efficient to calculate a single digest with the `histogram` function and subsequently query it with the equivalent functions from the `kixi.stats.distribution` namespace.
+
+```clojure
+(require '[kixi.stats.core :refer [histogram]]
+         '[kixi.stats.distribution :refer [quantile]])
+
+;; Calculate the 2.5 and 97.5 quantile from an empirical distribution
+
+(def distribution
+  (->> (range 100)
+       (transduce identity histogram)))
+
+{:lower (quantile distribution 0.025)
+ :upper (quantile distribution 0.975)}
+
+;; => {:lower 2.0, :upper 97.0}
+```
+
+The `post-complete` function defined in the `kixi.stats.core` allows us to chain the histogram and quantile steps like so:
+
+```clojure
+(require '[kixi.stats.core :refer [histogram post-complete]]
+         '[kixi.stats.distribution :refer [quantile]])
+
+;; Calculate the 2.5 and 97.5 quantile from an empirical disribution
+
+(->> (range 100)
+     (transduce identity (post-complete histogram
+                           (fn [hist]
+                             {:lower (quantile hist 0.025)
+                              :upper (quantile hist 0.975)}))
+
+;; => {:lower 2.0, :upper 97.0}
+```
+
+The `kixi.stats.distribution` namespace contains many functions for operating on histograms which mirror the names from `kixi.stats.core`: `cdf`, `iqr`, `minimum`, `maximum`, `quantile` and `summary`. In each case, the `kixi.stats.core` function will return a reducing function for use with `transduce` whereas the `kixi.stats.distribution` function will accept a calculated digest and return a value directly.
 
 **Distribution sampling**
 
-[kixi.stats.random](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/random.cljc) contains functions for specifying and sampling from statistical distributions.
+[kixi.stats.distribution](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/distribution.cljc) contains functions for specifying and sampling from statistical distributions.
 
 ```clojure
-(require '[kixi.stats.random :refer [draw sample binomial]])
+(require '[kixi.stats.distribution :refer [draw sample binomial]])
 
 (draw (binomial {:n 100 :p 0.5}))
 
@@ -111,7 +211,7 @@ Each distribution implements the `clojure.lang.ISeq` / `ISeqable`  interface, so
 The Bernoulli, binomial and categorical distributions are discrete, so samples can be summarised by counting the number of times each variate appears. Discrete distributions can be directly sampled in this way with `sample-summary`:
 
 ```clojure
-(require '[kixi.stats.random :refer [sample-summary bernoulli]])
+(require '[kixi.stats.distribution :refer [sample-summary bernoulli]])
 
 (sample-summary 1000 (bernoulli 0.3))
 
@@ -125,7 +225,7 @@ This is equivalent to `(frequencies (sample 1000 (bernoulli 0.3)))`, but where p
 The sampling functions `draw`, `sample` and `sample-summary` are all designed to perform deterministically when provided with a seed value. If repeatable samples are desired, pass `{:seed SEED_LONG}` as the final argument:
 
 ```clojure
-(require '[kixi.stats.random :refer [uniform]])
+(require '[kixi.stats.distribution :refer [uniform]])
 
 (draw (uniform 0 1) {:seed 42})
 
