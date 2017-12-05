@@ -104,11 +104,11 @@ Integration with transducers means that the wealth of core Clojure support can b
 ```clojure
 (require '[kixi.stats.core :refer [median]])
 
-(def gt5 (filter #(> % 5)))
+(def gt5? (filter #(> % 5)))
 
 ;; Calculate the median only of numbers greater than 5:
 
-(transduce gt5 median (range 10))
+(transduce gt5? median (range 10))
 
 ;; => 7.5
 ```
@@ -119,16 +119,16 @@ So long as `xform` is a stateless transducer, we can use it to create a new redu
 (require '[kixi.stats.core :refer [count]]
          '[redux.core :refer [fuse]])
 
-(def gt5 (filter #(> % 5)))
+(def gt5? (filter #(> % 5)))
 
 ;; Count both all numbers and those greater than 5:
 
-(transduce identity (fuse {:n count :gt5 (gt5 count)}) (range 10))
+(transduce identity (fuse {:n count :gt5 (gt5? count)}) (range 10))
 
 ;; => {:n 10, :gt5 4}
 ```
 
-The `kixi.stats` API is focused primarily on statistical functions and doesn't need to be littered with exhaustive `count-when`-style specialisms. Combiantors from libraries such as [redux](https://github.com/henrygarner/redux) and Clojure itself can be used to combine those functions in sophisticated ways.
+The `kixi.stats` API is focused primarily on statistical functions and doesn't need to be littered with exhaustive `count-when`-style specialisms. Combinators from libraries such as [redux](https://github.com/henrygarner/redux) and Clojure itself can be used to combine those functions in sophisticated ways.
 
 **Empricial distribution histograms**
 
@@ -245,6 +245,7 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
 
   * [Henry Garner](https://github.com/henrygarner)
   * [Simon Belak](https://github.com/sbelak)
+  * [Elise Huard](https://github.com/elisehuard)
 
 ## License
 
