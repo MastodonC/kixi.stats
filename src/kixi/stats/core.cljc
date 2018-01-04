@@ -1,5 +1,6 @@
 (ns kixi.stats.core
   (:require [kixi.stats.math :refer [sq sqrt pow root]]
+            [kixi.stats.data :as data]
             [redux.core :refer [fuse-matrix]]
             #?@(:clj [[kixi.stats.distribution :as d]
                       [kixi.stats.digest :refer [t-digest]]]))
@@ -34,6 +35,17 @@
    (def summary
      "Calculates the five number summary of numeric inputs."
      (post-complete histogram d/summary)))
+
+(defn cross-tabulate
+  [f1 f2]
+  (let [f (juxt f1 f2)
+        inc (fnil inc 0)]
+    (fn
+      ([] {})
+      ([acc x]
+       (update acc (f x) inc))
+      ([acc]
+       (data/map->ITable acc)))))
 
 (def count
   "Calculates the count of inputs."

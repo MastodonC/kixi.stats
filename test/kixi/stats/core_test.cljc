@@ -2,6 +2,7 @@
   (:require [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [kixi.stats.core :as kixi]
+            [kixi.stats.data :as data]
             [kixi.stats.test-helpers :as t :refer [=ish numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
             #?@(:cljs
@@ -252,6 +253,12 @@
       (- (/ (* n (reduce + (map #(pow (- % m) 4) coll)))
             (sq d))
          3))))
+
+(defn cross-tabulate'
+  [f1 f2 coll]
+  (->> coll
+       (map #(vector (f1 %) (f2 %)))
+       (frequencies)))
 
 (defspec count-spec
   test-opts
@@ -514,3 +521,16 @@
             x gen/int]
     (is (=ish (transduce identity (kixi/standard-error-prediction :x :y x) coll)
               (standard-error-prediction' :x :y x coll)))))
+
+(defspec cross-tabulate-spec
+  test-opts
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) (t/gen-category 5)))]
+    (is (=ish (transduce identity (kixi/cross-tabulate :x :y) coll)
+              (cross-tabulate' :x :y coll)))))
+
+(deftest cross-tabulate-test
+  (is (= (data/map->ITable {[:a :x] 3 [:b :y] 2 [:c :z] 1})
+         (->> (concat (repeat 3 {:v1 :a :v2 :x})
+                      (repeat 2 {:v1 :b :v2 :y})
+                      (repeat 1 {:v1 :c :v2 :z}))
+              (transduce identity (kixi/cross-tabulate :v1 :v2))))))

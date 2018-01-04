@@ -105,3 +105,12 @@
           (if (< x (+ a right))
             (/ (+ r (interpolate x (- a left) (+ a right))) n)
             1.0))))))
+
+(defn categories
+  [n]
+  (map #(->> % inc (str "category-") keyword) (range n)))
+
+(defn gen-category
+  [n]
+  (->> (categories n)
+       (gen/elements)))
