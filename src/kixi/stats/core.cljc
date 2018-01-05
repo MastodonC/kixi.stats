@@ -1,6 +1,7 @@
 (ns kixi.stats.core
   (:require [kixi.stats.math :refer [sq sqrt pow root]]
             [kixi.stats.data :as data]
+            [kixi.stats.test :as t]
             [redux.core :refer [fuse-matrix]]
             #?@(:clj [[kixi.stats.distribution :as d]
                       [kixi.stats.digest :refer [t-digest]]]))
@@ -445,3 +446,7 @@
        (f sum-squares x))
       ([fx fy x]
        (post-complete (sum-squares fx fy) #(f % x))))))
+
+(defn chisq-test
+  [f1 f2]
+  (post-complete (cross-tabulate f1 f2) t/chisq-test))

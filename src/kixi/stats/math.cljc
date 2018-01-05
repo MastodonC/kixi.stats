@@ -178,3 +178,38 @@
           abs-g
           (/ (- PI)
              (* x abs-g (sin (* PI x)))))))))
+
+(defn lower-regularized-gamma
+  "Computes the lower regularized incomplete gamma function P(a,x)"
+  [a x]
+  (when (and (>= x 0) (> a 0))
+    (let [max-iter (-> (+ (* (log (if (>= a 1) a (/ 1 a))) 8.5)
+                          (* 0.4 a)
+                          17)
+                       inc
+                       floor
+                       int)]
+      (if (< x (inc a))
+        (loop [i 1
+               ap a
+               del (double (/ 1 ap))
+               sum (double (/ 1 ap))]
+          (if (< i max-iter)
+            (let [ap (inc ap)
+                  del (* del (/ x ap))]
+              (recur (inc i) ap del (+ sum del)))
+            (* sum (exp (- (* a (log x)) x (log-gamma a))))))
+        (loop [i 1
+               b (double (- (inc x) a))
+               c (double (/ 1 1e-30))
+               d (double (/ 1 b))
+               h (double (/ 1 b))]
+          (let [an (* (- i) (- i a))
+                b (+ b 2)
+                d (+ (* an d) b)
+                c (+ b (/ an c))
+                d (/ 1 d)
+                h (* h d c)]
+            (if (< i max-iter)
+              (recur (inc i) b c d h)
+              (- 1 (* h (exp (- (* a (log x)) x (log-gamma a))))))))))))
