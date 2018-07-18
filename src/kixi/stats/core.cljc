@@ -5,13 +5,21 @@
             [redux.core :refer [fuse-matrix]]
             #?@(:clj [[kixi.stats.distribution :as d]
                       [kixi.stats.digest :refer [t-digest]]]))
-  (:refer-clojure :exclude [count]))
+  (:refer-clojure :exclude [count min max]))
 
 (defn ^:no-doc somef
   [f]
   (fn [x & args]
     (when-not (nil? x)
       (apply f x args))))
+
+(defn monoid
+  "Add 0-arity returning `init` to `f`."
+  [f init]
+  (fn
+    ([] init)
+    ([acc] (f acc))
+    ([acc x] (f acc x))))
 
 (defn ^:no-doc post-complete
   [rf f]
@@ -369,7 +377,7 @@
                                   0
                                   f12)]
        (when (and r-tilde k-tilde (> r-tilde 1) (> k-tilde 1))
-         (sqrt (/ (/ chi-squared n) (min (- r-tilde 1) (- k-tilde 1)))))))))
+         (sqrt (/ (/ chi-squared n) (clojure.core/min (- r-tilde 1) (- k-tilde 1)))))))))
 
 (defn sum-squares
   [fx fy]
@@ -450,3 +458,38 @@
 (defn chisq-test
   [f1 f2]
   (post-complete (cross-tabulate f1 f2) t/chisq-test))
+
+(defn share
+  "Calculate the share of inputs for which `pred` returns true."
+  [pred]
+  (fn
+    ([]
+     {:match 0
+      :total 0})
+    ([{:keys [match total]}]
+     (when (pos total)
+       (/ match total)))
+    ([{:keys [match total]} e]
+     {:match (cond-> match
+               (pred e) inc)
+      :total (inc total)})))
+
+(defn min
+  "Like clojure.core/min, but transducer and nil-friendly."
+  ([] Double/POSITIVE_INFINITY)
+  ([acc] acc)
+  ([^double acc e]
+   (if (nil? e)
+     acc
+     (let [e (double e)]
+       (clojure.core/min acc e)))))
+
+(defn max
+  "Like clojure.core/max, but transducer and nil-friendly."
+  ([] Double/NEGATIVE_INFINITY)
+  ([acc] acc)
+  ([^double acc e]
+   (if (nil? e)
+     acc
+     (let [e (double e)]
+       (clojure.core/max acc e)))))

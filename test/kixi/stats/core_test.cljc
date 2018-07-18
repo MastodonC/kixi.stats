@@ -542,3 +542,15 @@
                    (repeat 8 {:v1 :b :v2 :y}))]
     (is (=ish (transduce identity (kixi/chisq-test :v1 :v2) xs)
               {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
+
+(deftest min-test
+  (is (= 1 (transduce identity kixi/min [2 1 nil 5 3 ]))))
+
+(deftest max-test
+  (is (= 5 (transduce identity kixi/min [2 1 nil 5 3]))))
+
+(deftest share-test
+  (is (=ish (transduce identity (kixi/share neg?) [1 -1 3 5]) 0.25)))
+
+(deftest monoid-test
+  (is (= :init (kixi/monoid identity :init))))
