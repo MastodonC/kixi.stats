@@ -467,7 +467,7 @@
      {:match 0
       :total 0})
     ([{:keys [match total]}]
-     (when (pos total)
+     (when (pos? total)
        (/ match total)))
     ([{:keys [match total]} e]
      {:match (cond-> match
