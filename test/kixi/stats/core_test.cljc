@@ -544,10 +544,12 @@
               {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
 
 (deftest min-test
-  (is (= 1.0 (transduce identity kixi/min [2 1 nil 5 3 ]))))
+  (is (= 1.0 (transduce identity kixi/min [2 1 nil 5 3 ])))
+  (is (nil? (transduce identity kixi/min []))))
 
 (deftest max-test
-  (is (= 5.0 (transduce identity kixi/max [2 1 nil 5 3]))))
+  (is (= 5.0 (transduce identity kixi/max [2 1 nil 5 3])))
+  (is (nil? (transduce identity kixi/max []))))
 
 (deftest share-test
   (is (=ish (transduce identity (kixi/share neg?) [1 -1 3 5]) 0.25)))
