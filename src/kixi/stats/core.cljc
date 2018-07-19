@@ -468,7 +468,7 @@
       :total 0})
     ([{:keys [match total]}]
      (when (pos? total)
-       (/ match total)))
+       (double (/ match total))))
     ([{:keys [match total]} e]
      {:match (cond-> match
                (pred e) inc)
@@ -477,7 +477,9 @@
 (defn min
   "Like clojure.core/min, but transducer and nil-friendly."
   ([] Double/POSITIVE_INFINITY)
-  ([acc] acc)
+  ([acc]
+   (when (not= acc Double/POSITIVE_INFINITY)
+     acc))
   ([^double acc e]
    (if (nil? e)
      acc
@@ -487,7 +489,9 @@
 (defn max
   "Like clojure.core/max, but transducer and nil-friendly."
   ([] Double/NEGATIVE_INFINITY)
-  ([acc] acc)
+  ([acc]
+   (when (not= acc Double/NEGATIVE_INFINITY)
+     acc))
   ([^double acc e]
    (if (nil? e)
      acc
