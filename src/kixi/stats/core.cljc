@@ -330,6 +330,30 @@
        (when-not (zero? d)
          (/ ssxy d))))))
 
+(defn r-squared
+  "Given two functions: (fȳ input) and (fy input), returning the
+  predicted and actual values of y respectively,
+  estimates the coefficient of determination R^2.
+  This is the fraction of variance in y explained by the model."
+  [fȳ fy]
+  (fn
+    ([] [0.0 0.0 0.0 0.0])
+    ([[^double c ^double my ^double ssr ^double ssy :as acc] e]
+     (let [ȳ (fȳ e)
+           y (fy e)]
+       (if (or (nil? ȳ) (nil? y))
+         acc
+         (let [r   (double (- y ȳ)) ;; Residual
+               y   (double y)
+               c'  (inc c)
+               my' (+ my (/ (- y my) c'))]
+           [c' my'
+            (+ ssr  (* r r))
+            (+ ssy  (* (- y my') (- y my)))]))))
+    ([[c my ssr ssy]]
+     (when-not (or (zero? c) (zero? ssy))
+       (- 1 (/ ssr ssy))))))
+
 (defn correlation-matrix
   "Given a map of key names to functions that extract values for those keys
   from an input, computes the correlation for each of the n^2 key pairs.

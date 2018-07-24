@@ -130,6 +130,17 @@
           (when-not (zero? d)
             (/ (reduce + (map * mxs mys)) d)))))))
 
+(defn r-squared'
+  [fȳ fy coll]
+  (let [coll' (filter fȳ (filter fy coll))
+        n (count coll')
+        m (mean' (map fy coll'))
+        fe (fn [x] (- (fy x) (fȳ x)))
+        vare (apply + (map (comp sq fe) coll'))
+        vary (apply + (map (comp sq #(- (fy %) m)) coll'))]
+    (when (and vare vary (pos? vary))
+      (double (- 1 (/ vare vary))))))
+
 (defn cramers-v'
   [fx fy coll]
   (let [[x-counts y-counts xy-counts] (reduce
@@ -468,6 +479,18 @@
 (deftest correlation-test
   (is (nil? (transduce identity (kixi/correlation :x :y) [])))
   (is (nil? (transduce identity (kixi/correlation :x :y) [{:x 1 :y 2}]))))
+
+(defspec r-squared-spec
+  test-opts
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
+    (is (=ish (transduce identity (kixi/r-squared :x :y) coll)
+              (r-squared' :x :y coll)))))
+
+(deftest r-squared-test
+  (is (nil? (transduce identity (kixi/r-squared :x :y) [])))
+  (is (nil? (transduce identity (kixi/r-squared :x :y) [{:x 1 :y 2}])))
+  (is (= 0.625 (transduce identity (kixi/r-squared :x :y) [{:x 1 :y 1} {:x 2 :y 3} {:x 3 :y 3}]))))
 
 (defspec cramers-v-spec
   test-opts
