@@ -8,8 +8,8 @@
   (:refer-clojure :exclude [count min max]))
 
 (defn ^:no-doc somef
-  [f]
-  (fn [x & args]
+  [f & args]
+  (fn [x]
     (when-not (nil? x)
       (apply f x args))))
 
