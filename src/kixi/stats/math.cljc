@@ -1,4 +1,5 @@
-(ns kixi.stats.math)
+(ns kixi.stats.math
+  (:refer-clojure :exclude [infinite?]))
 
 (def PI
   #?(:clj Math/PI
@@ -53,6 +54,17 @@
 (defn equal [x y e]
   (<= (abs (- y x)) e))
 
+(def infinity
+  #?(:clj Double/POSITIVE_INFINITY
+     :cljs js/Infinity))
+
+(def negative-infinity
+  #?(:clj Double/NEGATIVE_INFINITY
+     :cljs js/-Infinity))
+
+(defn infinite? [x]
+  #?(:clj (Double/isInfinite x)
+     :cljs (not (js/isFinite x))))
 
 ;;;; Gamma
 

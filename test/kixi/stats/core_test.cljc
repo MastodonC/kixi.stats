@@ -131,11 +131,11 @@
             (/ (reduce + (map * mxs mys)) d)))))))
 
 (defn r-squared'
-  [fȳ fy coll]
-  (let [coll' (filter fȳ (filter fy coll))
+  [fy-bar fy coll]
+  (let [coll' (filter fy-bar (filter fy coll))
         n (count coll')
         m (mean' (map fy coll'))
-        fe (fn [x] (- (fy x) (fȳ x)))
+        fe (fn [x] (- (fy x) (fy-bar x)))
         vare (apply + (map (comp sq fe) coll'))
         vary (apply + (map (comp sq #(- (fy %) m)) coll'))]
     (when (and vare vary (pos? vary))

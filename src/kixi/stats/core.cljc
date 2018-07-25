@@ -1,5 +1,5 @@
 (ns kixi.stats.core
-  (:require [kixi.stats.math :refer [sq sqrt pow root]]
+  (:require [kixi.stats.math :refer [sq sqrt pow root infinity negative-infinity infinite?]]
             [kixi.stats.data :as data]
             [kixi.stats.test :as t]
             [redux.core :refer [fuse-matrix]]
@@ -335,15 +335,15 @@
   predicted and actual values of y respectively,
   estimates the coefficient of determination R^2.
   This is the fraction of variance in y explained by the model."
-  [fȳ fy]
+  [fy-bar fy]
   (fn
     ([] [0.0 0.0 0.0 0.0])
     ([[^double c ^double my ^double ssr ^double ssy :as acc] e]
-     (let [ȳ (fȳ e)
+     (let [y-bar (fy-bar e)
            y (fy e)]
-       (if (or (nil? ȳ) (nil? y))
+       (if (or (nil? y-bar) (nil? y))
          acc
-         (let [r   (double (- y ȳ)) ;; Residual
+         (let [r   (double (- y y-bar)) ;; Residual
                y   (double y)
                c'  (inc c)
                my' (+ my (/ (- y my) c'))]
@@ -487,37 +487,37 @@
   "Calculate the share of inputs for which `pred` returns true."
   [pred]
   (fn
-    ([]
-     {:match 0
-      :total 0})
-    ([{:keys [match total]}]
-     (when (pos? total)
-       (double (/ match total))))
-    ([{:keys [match total]} e]
-     {:match (cond-> match
+    ([] [0 0])
+    ([[n d] e]
+     (vector (cond-> n
                (pred e) inc)
-      :total (inc total)})))
+             (inc d)))
+    ([[n d]]
+     (when (pos? d)
+       (double (/ n d))))))
 
-(defn min
+(def min
   "Like clojure.core/min, but transducer and nil-friendly."
-  ([] Double/POSITIVE_INFINITY)
-  ([acc]
-   (when (not= acc Double/POSITIVE_INFINITY)
-     acc))
-  ([^double acc e]
-   (if (nil? e)
-     acc
-     (let [e (double e)]
-       (clojure.core/min acc e)))))
+  (fn
+    ([] infinity)
+    ([acc]
+     (when-not (infinite? acc)
+       acc))
+    ([^double acc e]
+     (if (nil? e)
+       acc
+       (let [e (double e)]
+         (clojure.core/min acc e))))))
 
-(defn max
+(def max
   "Like clojure.core/max, but transducer and nil-friendly."
-  ([] Double/NEGATIVE_INFINITY)
-  ([acc]
-   (when (not= acc Double/NEGATIVE_INFINITY)
-     acc))
-  ([^double acc e]
-   (if (nil? e)
-     acc
-     (let [e (double e)]
-       (clojure.core/max acc e)))))
+  (fn
+    ([] negative-infinity)
+    ([acc]
+     (when-not (infinite? acc)
+       acc))
+    ([^double acc e]
+     (if (nil? e)
+       acc
+       (let [e (double e)]
+         (clojure.core/max acc e))))))

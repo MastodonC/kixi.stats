@@ -8,7 +8,7 @@
                  [com.tdunning/t-digest "3.2"]]
   :profiles {:dev
              {:dependencies [[org.clojure/clojure "1.8.0"]
-                             [org.clojure/clojurescript "1.9.542"]
+                             [org.clojure/clojurescript "1.10.339"]
                              [incanter "1.5.7"]]
               :plugins [[lein-cljsbuild "1.1.3"]
                         [lein-codox "0.10.3"]
