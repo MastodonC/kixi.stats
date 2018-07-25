@@ -483,8 +483,8 @@
   [f1 f2]
   (post-complete (cross-tabulate f1 f2) t/chisq-test))
 
-(defn share
-  "Calculate the share of inputs for which `pred` returns true."
+(defn proportion
+  "Calculate the proportion of inputs for which `pred` returns true."
   [pred]
   (fn
     ([] [0 0])
@@ -495,6 +495,10 @@
     ([[n d]]
      (when (pos? d)
        (double (/ n d))))))
+
+(def share
+  "Alias for proportion"
+  proportion)
 
 (def min
   "Like clojure.core/min, but transducer and nil-friendly."

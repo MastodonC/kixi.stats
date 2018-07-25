@@ -24,6 +24,9 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 **Available transducing functions:**
 
 * Count
+* Min
+* Max
+* Proportion
 * (Arithmetic) mean
 * Geometric mean
 * Harmonic mean
@@ -37,6 +40,7 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Covariance
 * Covariance matrix
 * Correlation
+* R-squared coefficient of determination
 * Correlation matrix
 * Simple linear regression
 * Standard error of the mean
