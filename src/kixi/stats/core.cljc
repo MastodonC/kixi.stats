@@ -331,19 +331,19 @@
          (/ ssxy d))))))
 
 (defn r-squared
-  "Given two functions: (fȳ input) and (fy input), returning the
-  predicted and actual values of y respectively,
-  estimates the coefficient of determination R^2.
+  "Given two functions: (fŷ input) and (fy input), returning
+  the predicted and actual values of y respectively, estimates
+  the coefficient of determination R^2.
   This is the fraction of variance in y explained by the model."
-  [fy-bar fy]
+  [fy-hat fy]
   (fn
     ([] [0.0 0.0 0.0 0.0])
     ([[^double c ^double my ^double ssr ^double ssy :as acc] e]
-     (let [y-bar (fy-bar e)
+     (let [y-hat (fy-hat e)
            y (fy e)]
-       (if (or (nil? y-bar) (nil? y))
+       (if (or (nil? y-hat) (nil? y))
          acc
-         (let [r   (double (- y y-bar)) ;; Residual
+         (let [r   (double (- y y-hat)) ;; Residual
                y   (double y)
                c'  (inc c)
                my' (+ my (/ (- y my) c'))]
