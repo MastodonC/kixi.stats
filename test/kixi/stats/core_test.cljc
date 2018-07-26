@@ -490,7 +490,15 @@
 (deftest r-squared-test
   (is (nil? (transduce identity (kixi/r-squared :x :y) [])))
   (is (nil? (transduce identity (kixi/r-squared :x :y) [{:x 1 :y 2}])))
-  (is (= 0.625 (transduce identity (kixi/r-squared :x :y) [{:x 1 :y 1} {:x 2 :y 3} {:x 3 :y 3}]))))
+  (is (=ish 0.625 (transduce identity (kixi/r-squared :x :y) [{:x 1 :y 1} {:x 2 :y 3} {:x 3 :y 3}])))
+  (is (=ish -0.2 (transduce identity (kixi/r-squared :x :y) [{:x 1 :y 1} {:x 3 :y 2} {:x 5 :y 3} {:x 5 :y 4}]))))
+
+(deftest adjusted-r-squared-test
+  (is (nil? (transduce identity (kixi/adjusted-r-squared :x :y 1) [])))
+  (is (nil? (transduce identity (kixi/adjusted-r-squared :x :y 1) [{:x 1 :y 2}])))
+  (is (nil? (transduce identity (kixi/adjusted-r-squared :x :y 2) [{:x 1 :y 1} {:x 2 :y 3} {:x 3 :y 3}])))
+  (is (=ish -0.8 (transduce identity (kixi/adjusted-r-squared :x :y 1) [{:x 1 :y 1} {:x 3 :y 2} {:x 5 :y 3} {:x 5 :y 4}])))
+  (is (=ish -2.6 (transduce identity (kixi/adjusted-r-squared :x :y 2) [{:x 1 :y 1} {:x 3 :y 2} {:x 5 :y 3} {:x 5 :y 4}]))))
 
 (defspec cramers-v-spec
   test-opts

@@ -41,6 +41,7 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Covariance matrix
 * Correlation
 * R-squared coefficient of determination
+* Adjusted R-squared
 * Correlation matrix
 * Simple linear regression
 * Standard error of the mean
