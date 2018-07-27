@@ -2,9 +2,9 @@
   (:require [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [kixi.stats.core :as kixi]
-            [kixi.stats.data :as data]
             [kixi.stats.test-helpers :as t :refer [=ish numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
+            [kixi.stats.protocols :as p]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :refer-macros [for-all]]
@@ -553,18 +553,13 @@
     (is (=ish (transduce identity (kixi/standard-error-prediction :x :y x) coll)
               (standard-error-prediction' :x :y x coll)))))
 
-(defspec cross-tabulate-spec
-  test-opts
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) (t/gen-category 5)))]
-    (is (=ish (transduce identity (kixi/cross-tabulate :x :y) coll)
-              (cross-tabulate' :x :y coll)))))
-
 (deftest cross-tabulate-test
-  (is (= (data/map->ITable {[:a :x] 3 [:b :y] 2 [:c :z] 1})
-         (->> (concat (repeat 3 {:v1 :a :v2 :x})
-                      (repeat 2 {:v1 :b :v2 :y})
-                      (repeat 1 {:v1 :c :v2 :z}))
-              (transduce identity (kixi/cross-tabulate :v1 :v2))))))
+  (let [xtab (transduce identity (kixi/cross-tabulate :v1 :v2) (concat (repeat 3 {:v1 :a :v2 :x})
+                                                                       (repeat 2 {:v1 :b :v2 :y})
+                                                                       (repeat 1 {:v1 :b :v2 :z})))]
+    (is (= 6 (p/grand-total xtab)))
+    (is (= [2 3] (p/size xtab)))
+    (is (= [{:a 3, :b 3} {:x 3, :y 2, :z 1}] (p/margin-totals xtab)))))
 
 (deftest chisq-test-test
   (let [xs (concat (repeat 2 {:v1 :a :v2 :x})

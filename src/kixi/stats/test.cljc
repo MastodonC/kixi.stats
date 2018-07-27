@@ -1,21 +1,23 @@
 (ns kixi.stats.test
-  (:require [kixi.stats.math :refer [sq lower-regularized-gamma]]))
+  (:require [kixi.stats.math :refer [pow sq lower-regularized-gamma]]
+            [kixi.stats.protocols :as p]
+            [clojure.math.combinatorics :refer [cartesian-product]]))
 
 (defn chisq-test
-  [^kixi.stats.data.ITable table]
-  (let [+' (fnil + 0)
-        [xs ys total] (reduce (fn [[xs ys total] [[x y] n]]
-                                [(update xs x +' n)
-                                 (update ys y +' n)
-                                 (+ total n)])
-                              [{} {} 0]
-                              table)
-        dof (* (dec (count xs)) (dec (count ys)))
-        stat (->> (for [x (keys xs) y (keys ys)] (vector x y))
-                  (reduce (fn [acc [x y]]
-                            (let [e (/ (* (get xs x) (get ys y)) total)]
-                              (+ acc (/ (sq (- e (get table [x y]))) e))))
-                          0))]
+  "Calculates the X^2 test of independence for a given contingency table.
+  See kixi.stats.core/cross-tabulate"
+  [^kixi.stats.protocols.IContingencyTable table]
+  (let [margins (p/margin-totals table)
+        size (p/size table)
+        factors (count size)
+        total (pow (p/grand-total table) (dec factors))
+        dof (apply - (apply * size) 1 (map dec size))
+        stat (reduce (fn [acc level-counts]
+                       (let [cell (p/cell table (mapv first level-counts))
+                             e (/ (apply * (map second level-counts)) total)]
+                         (+ acc (/ (sq (- e cell)) e))))
+                     0
+                     (apply cartesian-product margins))]
     {:p-value (- 1 (lower-regularized-gamma (/ dof 2.0) (/ stat 2.0)))
      :X-sq (double stat)
      :dof dof}))

@@ -1,7 +1,7 @@
 (ns kixi.stats.core
   (:require [kixi.stats.math :refer [sq sqrt pow root infinity negative-infinity infinite?]]
-            [kixi.stats.data :as data]
             [kixi.stats.test :as t]
+            [kixi.stats.protocols :as p]
             [redux.core :refer [fuse-matrix]]
             #?@(:clj [[kixi.stats.distribution :as d]
                       [kixi.stats.digest :refer [t-digest]]]))
@@ -46,15 +46,32 @@
      (post-complete histogram d/summary)))
 
 (defn cross-tabulate
-  [f1 f2]
-  (let [f (juxt f1 f2)
+  "Given a sequence of n functions, each of which returns the categorical value
+  (e.g. keyword or string) of a factor, calculates an n-dimensional contingency table
+  implementing IContingencyTable. This can be passed to kixi.stats.test/chisq-test
+  to determine if the relationship between factors is significant."
+  [& fxs]
+  (let [f (apply juxt fxs)
+        k (clojure.core/count fxs)
         inc (fnil inc 0)]
     (fn
-      ([] {})
-      ([acc x]
-       (update acc (f x) inc))
-      ([acc]
-       (data/map->ITable acc)))))
+      ([] (vector {} (vec (repeat k {})) 0))
+      ([[cells margins n] x]
+       [(update cells (f x) inc)
+        (first (reduce (fn [[margins i] fx]
+                         [(update-in margins [i (fx x)] inc) (inc i)])
+                       [margins 0]
+                       fxs))
+        (inc n)])
+      ([[cells margins n]]
+       (let [dimensions 2]
+         (reify p/IContingencyTable
+           (cell [_ coordinates]
+             (get cells coordinates 0))
+           (grand-total [_] n)
+           (margin-totals [_] margins)
+           (size [_]
+             (mapv clojure.core/count margins))))))))
 
 (def count
   "Calculates the count of inputs."

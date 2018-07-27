@@ -1,6 +1,6 @@
 (ns kixi.stats.test-test
   (:require [kixi.stats.test :as sut]
-            [kixi.stats.data :as d]
+            [kixi.stats.core :refer [cross-tabulate]]
             [kixi.stats.test-helpers :refer [=ish]]
             #?@(:cljs
                 [[cljs.test :refer-macros [is deftest]]]
@@ -8,5 +8,10 @@
                 [[clojure.test :refer [is deftest]]])))
 
 (deftest chisq-test-test
-  (is (=ish (sut/chisq-test (d/map->ITable {[:a :x] 2 [:a :y] 4 [:b :x] 6 [:b :y] 8}))
-            {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1})))
+  (let [xtab (transduce identity (cross-tabulate :x :y)
+                        (concat (repeat 2 {:x :a :y :x})
+                                (repeat 4 {:x :a :y :y})
+                                (repeat 6 {:x :b :y :x})
+                                (repeat 8 {:x :b :y :y})))]
+    (is (=ish (sut/chisq-test xtab)
+              {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
