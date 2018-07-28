@@ -561,12 +561,12 @@
     (is (= [2 3] (p/size xtab)))
     (is (= [{:a 3, :b 3} {:x 3, :y 2, :z 1}] (p/margin-totals xtab)))))
 
-(deftest chisq-test-test
+(deftest chi-squared-test-test
   (let [xs (concat (repeat 2 {:v1 :a :v2 :x})
                    (repeat 4 {:v1 :a :v2 :y})
                    (repeat 6 {:v1 :b :v2 :x})
                    (repeat 8 {:v1 :b :v2 :y}))]
-    (is (=ish (transduce identity (kixi/chisq-test :v1 :v2) xs)
+    (is (=ish (transduce identity (kixi/chi-squared-test :v1 :v2) xs)
               {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
 
 (deftest min-test

@@ -225,3 +225,51 @@
             (if (< i max-iter)
               (recur (inc i) b c d h)
               (- 1 (* h (exp (- (* a (log x)) x (log-gamma a))))))))))))
+
+(defn erf
+  "Computes the error function"
+  [x]
+  (let [x' (abs x)
+        t (/ 2 (+ x' 2))
+        ty (- (* 4 t) 2)
+        [d dd] (reduce (fn [[d dd] cof]
+                         (vector (+ (- (* ty d) dd) cof) d))
+                       [0 0]
+                       [-2.8E-17 1.21E-16 -9.4E-17 -1.523E-15 7.106E-15 3.81E-16
+                        -1.12708E-13 3.13092E-13 8.94487E-13 -6.886027E-12 2.394038E-12
+                        9.6467911E-11 -2.27365122E-10 -9.91364156E-10 5.059343495E-9
+                        6.529054439E-9 -8.5238095915E-8 1.5626441722E-8 1.30365583558E-6
+                        -1.624290004647E-6 -2.0278578112534E-5 4.2523324806907E-5
+                        3.66839497852761E-4 -9.46595344482036E-4 -0.00956151478680863
+                        0.019476473204185836 0.6419697923564902])
+        cof -1.3026537197817094
+        res (* t (exp (+ (* (- x') x') (* 0.5 (+ (* ty d) cof)) (- dd))))]
+    (if (neg? x)
+      (- res 1)
+      (- 1 res))))
+
+(defn erfc
+  "Computes the complementary error function"
+  [x]
+  (- 1 (erf x)))
+
+(defn erfcinv
+  "Computes the inverse of the complementary error function"
+  [p]
+  (cond (>= p 2) -100
+        (<= p 0) 100
+        :else (let [pp (if (< p 1) p (- 2 p))
+                    t (sqrt (* -2 (log (* pp 0.5))))
+                    x (* -0.70711
+                         (- (/ (+ (* 0.27061 t) 2.30753)
+                               (+ 1 (* t (+ (* 0.04481 t) 0.99229))))
+                            t))
+                    x (loop [j 0 x x]
+                        (if (< j 2)
+                          (let [err (- (erfc x) pp)]
+                            (recur (inc j)
+                                   (+ x (/ err (- (* 1.12837916709551257 (exp (* (- x) x)))
+                                                  (* x err))))))
+                          x))]
+                (if (< p 1)
+                  x (- x)))))

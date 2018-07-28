@@ -1,6 +1,6 @@
 (ns kixi.stats.distribution
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma sq floor]]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma sq floor erf erfcinv]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
 (defprotocol IBounded
@@ -295,6 +295,12 @@
       (+ (* (rand-normal rng) sd) mu))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    IQuantile
+    (cdf [this x]
+      (* 0.5 (+ 1 (erf (/ (- x mu)
+                          (sqrt (* 2 sd sd)))))))
+    (quantile [this p]
+      (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable

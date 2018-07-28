@@ -512,9 +512,9 @@
       ([fx fy x]
        (post-complete (sum-squares fx fy) #(f % x))))))
 
-(defn chisq-test
-  [f1 f2]
-  (post-complete (cross-tabulate f1 f2) t/chisq-test))
+(defn chi-squared-test
+  [& fxs]
+  (post-complete (apply cross-tabulate fxs) t/chi-squared-test))
 
 (defn proportion
   "Calculate the proportion of inputs for which `pred` returns true."
