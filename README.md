@@ -286,6 +286,6 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
 
 ## License
 
-Copyright © 2017 Mastodon C Ltd
+Copyright © 2018 Mastodon C Ltd
 
 Distributed under the Eclipse Public License version 1.0.
