@@ -21,6 +21,11 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Uniform
 * Weibull
 
+**Statistical tests:**
+
+* Simple Z-test (one-sample location test)
+* Chi-squared test of categorical independence
+
 **Available transducing functions:**
 
 * Count
@@ -47,6 +52,8 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Standard error of the mean
 * Standard error of the estimate
 * Standard error of the prediction
+* Simple Z-test
+* Chi-squared test
 
 Variance, covariance, standard deviation, skewness and kurtosis each have sample and population variants.
 
@@ -239,6 +246,31 @@ The sampling functions `draw`, `sample` and `sample-summary` are all designed to
 (draw (uniform 0 1) {:seed 42})
 
 ;;=> 0.7415648787718233
+```
+
+**Statistical tests**
+
+The [kixi.stats.test](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/test.cljc) namespace contains functions for performing statistical tests.
+
+For example, we can perform a z-test between a known population mean & standard deviation and a sampled mean with a given sample size in the following way:
+
+```clojure
+(require '[kixi.stats.test :refer [simple-z-test]])
+
+(simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :lower})
+
+;;=> {:p-value 0.0067167326028858}
+```
+
+As with the `kixi.stats.distribution` namespace - which contains many functions which mirror `kixi.stats.core` - `simple-z-test` is also available in `kixi.stats.core`. The latter function returns a reducing function for use with `transduce`.
+
+```clojure
+(require '[kixi.stats.core :refer [simple-z-test]])
+
+;; If the standard deviation is not provided, the sample standard deviation will be used instead (a 'plug-in test')
+(transduce identity (simple-z-test {:mu 100}) (range 200))
+
+;;=> {:p-value 0.9027648250246222}
 ```
 
 ## References

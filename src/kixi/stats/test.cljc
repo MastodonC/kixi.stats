@@ -24,9 +24,19 @@
      :dof dof}))
 
 (defn simple-z-test
-  "Calculates the z-test of statistical significance"
-  [mu sd x-bar n & [{:keys [one-tail?] :or {one-tail? false}}]]
-  (let [z (double (/ (- (abs (- x-bar mu)))
-                     (/ sd (sqrt n))))]
-    {:p-value (* (* 0.5 (+ 1 (erf (/ z (sqrt 2)))))
-                 (if one-tail? 1 2))}))
+  "Calculates the z-test of statistical significance for a sample mean.
+  mu: the population mean
+  sd: the population standard deviation
+  mean: the sample mean
+  n: the sample size
+  tails: (optional) must be one of :lower, :upper, or :both (default)"
+  [{:keys [mu sd]} {:keys [mean n]} & [{:keys [tails] :or {tails :both}}]]
+  (let [z (when (pos? sd)
+            (double (/ (- mean mu)
+                       (/ sd (sqrt n)))))]
+    (when z
+      {:p-value
+       (case tails
+         :lower (* 0.5 (+ 1 (erf (/ z (sqrt 2)))))
+         :upper (- 1 (* 0.5 (+ 1 (erf (/ z (sqrt 2))))))
+         :both (+ 1 (erf (/ z (sqrt 2)))))})))

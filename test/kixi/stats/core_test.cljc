@@ -2,6 +2,7 @@
   (:require [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [kixi.stats.core :as kixi]
+            [kixi.stats.test :refer [simple-z-test]]
             [kixi.stats.test-helpers :as t :refer [=ish numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
             [kixi.stats.protocols :as p]
@@ -568,6 +569,27 @@
                    (repeat 8 {:v1 :b :v2 :y}))]
     (is (=ish (transduce identity (kixi/chi-squared-test :v1 :v2) xs)
               {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
+
+(defspec simple-z-test-test
+  test-opts
+  (for-all [coll (gen/vector gen/int 2 100)
+            opts (gen/elements [{} {:tails :lower} {:tails :upper}])
+            x gen/int]
+           (is (=ish (transduce identity (kixi/simple-z-test {:mu x} opts) coll)
+                     (simple-z-test {:mu x :sd (sqrt (variance' coll))}
+                                    {:mean (mean' coll) :n (count coll)}
+                                    opts)))))
+
+(defspec simple-z-test-test
+  test-opts
+  (for-all [coll (gen/vector gen/int 2 100)
+            opts (gen/elements [{} {:tails :lower} {:tails :upper}])
+            sd gen/pos-int
+            x gen/int]
+           (is (=ish (transduce identity (kixi/simple-z-test {:mu x :sd sd} opts) coll)
+                     (simple-z-test {:mu x :sd sd}
+                                    {:mean (mean' coll) :n (count coll)}
+                                    opts)))))
 
 (deftest min-test
   (is (= 1.0 (transduce identity kixi/min [2 1 nil 5 3 ])))

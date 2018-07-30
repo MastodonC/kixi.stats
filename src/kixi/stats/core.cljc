@@ -46,7 +46,7 @@
      (post-complete histogram d/summary)))
 
 (defn cross-tabulate
-  "Given a sequence of n functions, each of which returns the categorical value
+  "Given a sequence of n functions, each of which returns a categorical value
   (e.g. keyword or string) of a factor, calculates an n-dimensional contingency table
   implementing IContingencyTable. This can be passed to kixi.stats.test/chisq-test
   to determine if the relationship between factors is significant."
@@ -513,8 +513,35 @@
        (post-complete (sum-squares fx fy) #(f % x))))))
 
 (defn chi-squared-test
+  "Given a sequence of functions, each of which returns the categorical value
+  (e.g. keyword or string) of a factor, performs a X^2 test of independence."
   [& fxs]
   (post-complete (apply cross-tabulate fxs) t/chi-squared-test))
+
+(defn simple-z-test
+  "Performs a simple z test against a specified population mean
+  and standard deviation. The standard deviation is optional,
+  if not provided, a 'plug-in' test using the sample's sd
+  will be performed instead.
+  mu: the population mean
+  sd: (optional) the population standard deviation
+  opts: (optional) see kixi.stats.test/simple-z-test for options"
+  [{:keys [mu sd]} & [opts]]
+  (if sd
+    (completing mean
+                (fn [[s c]]
+                  (when-not (zero? c)
+                    (t/simple-z-test {:mu mu :sd sd}
+                                     {:mean (/ s c) :n c}
+                                     opts))))
+    (completing variance
+                (fn [[c m ss]]
+                  (when-not (zero? c)
+                    (let [c' (dec c)
+                          var (if (pos? c') (/ ss c') 0)]
+                      (t/simple-z-test {:mu mu :sd (sqrt var)}
+                                       {:mean m :n c}
+                                       opts)))))))
 
 (defn proportion
   "Calculate the proportion of inputs for which `pred` returns true."

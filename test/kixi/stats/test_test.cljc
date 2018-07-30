@@ -17,5 +17,12 @@
               {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
 
 (deftest simple-z-test-test
-  (is (=ish (sut/simple-z-test 100 12 96 55)
-            {:p-value 0.0134334652057716})))
+  (let [p 0.0067167326028858]
+    (is (=ish (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :both})
+              {:p-value (* 2 p)}))
+    (is (=ish (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :lower})
+              {:p-value p}))
+    (is (=ish (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :upper})
+              {:p-value (- 1 p)}))
+    (is (=ish (sut/simple-z-test {:mu 96 :sd 12} {:mean 100 :n 55} {:tails :upper})
+              {:p-value p}))))
