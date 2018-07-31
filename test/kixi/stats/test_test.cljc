@@ -26,3 +26,7 @@
               {:p-value (- 1 p)}))
     (is (=ish (sut/simple-z-test {:mu 96 :sd 12} {:mean 100 :n 55} {:tails :upper})
               {:p-value p}))))
+
+(deftest z-test-test
+  (is (=ish (sut/z-test {:mean 28 :sd 14.1 :n 75} {:mean 33 :sd 9.5 :n 50})
+            {:p-value 0.01785148959436078})))

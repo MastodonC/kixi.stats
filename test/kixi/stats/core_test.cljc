@@ -2,7 +2,7 @@
   (:require [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [kixi.stats.core :as kixi]
-            [kixi.stats.test :refer [simple-z-test]]
+            [kixi.stats.test :refer [simple-z-test z-test]]
             [kixi.stats.test-helpers :as t :refer [=ish numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
             [kixi.stats.protocols :as p]
@@ -570,7 +570,7 @@
     (is (=ish (transduce identity (kixi/chi-squared-test :v1 :v2) xs)
               {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
 
-(defspec simple-z-test-test
+(defspec simple-z-test-plugin-spec
   test-opts
   (for-all [coll (gen/vector gen/int 2 100)
             opts (gen/elements [{} {:tails :lower} {:tails :upper}])
@@ -580,7 +580,7 @@
                                     {:mean (mean' coll) :n (count coll)}
                                     opts)))))
 
-(defspec simple-z-test-test
+(defspec simple-z-test-spec
   test-opts
   (for-all [coll (gen/vector gen/int 2 100)
             opts (gen/elements [{} {:tails :lower} {:tails :upper}])
@@ -590,6 +590,25 @@
                      (simple-z-test {:mu x :sd sd}
                                     {:mean (mean' coll) :n (count coll)}
                                     opts)))))
+
+(defspec z-test-test
+  test-opts
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
+            opts (gen/elements [{} {:tails :lower} {:tails :upper}])]
+           (is (=ish (transduce identity (kixi/z-test :x :y opts) coll)
+                     (let [xs (keep identity (map :x coll))
+                           x-var (variance' xs)
+                           ys (keep identity (map :y coll))
+                           y-var (variance' ys)]
+                       (when (and (> (count xs) 1)
+                                  (> (count ys) 1))
+                         (z-test {:mean (mean' xs)
+                                  :sd (if x-var (sqrt x-var) 0)
+                                  :n (count xs)}
+                                 {:mean (mean' ys)
+                                  :sd (if y-var (sqrt y-var) 0)
+                                  :n (count ys)}
+                                 opts)))))))
 
 (deftest min-test
   (is (= 1.0 (transduce identity kixi/min [2 1 nil 5 3 ])))

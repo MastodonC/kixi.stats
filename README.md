@@ -24,6 +24,7 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 **Statistical tests:**
 
 * Simple Z-test (one-sample location test)
+* Two-sample Z-test
 * Chi-squared test of categorical independence
 
 **Available transducing functions:**
@@ -52,7 +53,7 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Standard error of the mean
 * Standard error of the estimate
 * Standard error of the prediction
-* Simple Z-test
+* Simple Z-test & Two-sample Z-test
 * Chi-squared test
 
 Variance, covariance, standard deviation, skewness and kurtosis each have sample and population variants.
