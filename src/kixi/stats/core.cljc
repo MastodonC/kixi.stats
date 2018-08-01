@@ -48,8 +48,9 @@
 (defn cross-tabulate
   "Given a sequence of n functions, each of which returns a categorical value
   (e.g. keyword or string) of a factor, calculates an n-dimensional contingency table
-  implementing IContingencyTable. This can be passed to kixi.stats.test/chisq-test
-  to determine if the relationship between factors is significant."
+  implementing IContingencyTable. This can be passed to kixi.stats.test/chi-squared-test
+  to determine if the relationship between factors is significant.
+  See also: kixi.stats.core/chi-squared-test"
   [& fxs]
   (let [f (apply juxt fxs)
         k (clojure.core/count fxs)
