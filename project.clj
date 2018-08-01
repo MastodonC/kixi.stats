@@ -9,18 +9,17 @@
                  [com.tdunning/t-digest "3.2"]]
   :profiles {:dev
              {:dependencies [[org.clojure/clojure "1.8.0"]
-                             [org.clojure/clojurescript "1.10.339"]
-                             [incanter "1.5.7"]]
+                             [org.clojure/clojurescript "1.10.339"]]
               :plugins [[lein-cljsbuild "1.1.3"]
                         [lein-codox "0.10.3"]
-                        [lein-doo "0.1.6"]]}}
+                        [lein-doo "0.1.10"]]}}
   :codox {:project {:name "kixi.stats"}
           :source-uri "https://github.com/MastodonC/kixi.stats/blob/v0.4.1/{filepath}#L{line}"}
   :cljsbuild
   {:builds
    {:test {:source-paths ["src" "test"]
            :compiler {:output-to "target/main.js"
-                      :main 'kixi.stats.test-runner
+                      :main kixi.stats.test-runner
                       :optimizations :whitespace}}}}
   :aliases
   {"test-cljs" ["doo" "phantom" "test" "once"]})
