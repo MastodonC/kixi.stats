@@ -142,6 +142,14 @@
     (when (and vare vary (pos? vary))
       (double (- 1 (/ vare vary))))))
 
+(defn mse'
+  [fy-hat fy coll]
+  (let [coll' (filter fy-hat (filter fy coll))
+        n (count coll')
+        fe (fn [x] (- (fy x) (fy-hat x)))]
+    (when (pos? n)
+      (/ (apply + (map (comp sq fe) coll')) n))))
+
 (defn cramers-v'
   [fx fy coll]
   (let [[x-counts y-counts xy-counts] (reduce
@@ -500,6 +508,18 @@
   (is (nil? (transduce identity (kixi/adjusted-r-squared :x :y 2) [{:x 1 :y 1} {:x 2 :y 3} {:x 3 :y 3}])))
   (is (=ish -0.8 (transduce identity (kixi/adjusted-r-squared :x :y 1) [{:x 1 :y 1} {:x 3 :y 2} {:x 5 :y 3} {:x 5 :y 4}])))
   (is (=ish -2.6 (transduce identity (kixi/adjusted-r-squared :x :y 2) [{:x 1 :y 1} {:x 3 :y 2} {:x 5 :y 3} {:x 5 :y 4}]))))
+
+(defspec mse-spec
+  test-opts
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+    (is (=ish (transduce identity (kixi/mse :x :y) coll)
+              (mse' :x :y coll)))))
+
+(defspec rmse-spec
+  test-opts
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+    (is (=ish (transduce identity (kixi/rmse :x :y) coll)
+              (some-> (mse' :x :y coll) sqrt)))))
 
 (defspec cramers-v-spec
   test-opts

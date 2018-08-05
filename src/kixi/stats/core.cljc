@@ -388,6 +388,32 @@
                   (- 1 (/ (* (/ ssr ssy) (dec c))
                           (- c k 1)))))))
 
+(defn mse
+  "Given two functions: (fŷ input) and (fy input), returning
+  the predicted and actual values of y respectively, calculates
+  the mean squared error of the estimate."
+  [fy-hat fy]
+  (fn
+    ([] [0.0 0.0])
+    ([[^double c ^double mse :as acc] e]
+     (let [y-hat (fy-hat e)
+           y (fy e)]
+       (if (or (nil? y-hat) (nil? y))
+         acc
+         (let [se (sq (- y y-hat))
+               c' (inc c)]
+           [c' (+ mse (/ (- se mse) c'))]))))
+    ([[c mse]]
+     (when (pos? c)
+       mse))))
+
+(defn rmse
+  "Given two functions: (fŷ input) and (fy input), returning
+  the predicted and actual values of y respectively, calculates
+  the root mean squared error of the estimate."
+  [fy-hat fy]
+  (post-complete (mse fy-hat fy) (somef sqrt)))
+
 (defn correlation-matrix
   "Given a map of key names to functions that extract values for those keys
   from an input, computes the correlation for each of the n^2 key pairs.
