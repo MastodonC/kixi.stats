@@ -574,6 +574,18 @@
     (is (=ish (transduce identity (kixi/standard-error-prediction :x :y x) coll)
               (standard-error-prediction' :x :y x coll)))))
 
+#?(:clj
+   (defspec locally-weighted-regression-spec
+     test-opts
+     ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
+     (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+              (let [res (transduce identity (kixi/locally-weighted-regression :x :y) coll)
+                    xs (distinct (map :x (filter :x (filter :y coll))))]
+                (if (> (count xs) 6)
+                  (do (satisfies? kixi.stats.protocols/IPredictiveModel res)
+                      (satisfies? kixi.stats.protocols/IBounded res))
+                  (is (nil? res)))))))
+
 (deftest cross-tabulate-test
   (let [xtab (transduce identity (kixi/cross-tabulate :v1 :v2) (concat (repeat 3 {:v1 :a :v2 :x})
                                                                        (repeat 2 {:v1 :b :v2 :y})
