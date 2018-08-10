@@ -18,12 +18,12 @@
        clojure.lang.Counted
        (count [_]
          (.size digest))
-       kixi.stats.distribution.IBounded
+       kixi.stats.protocols.IBounded
        (minimum [_]
          (nan->nil (.getMin digest)))
        (maximum [_]
          (nan->nil (.getMax digest)))
-       kixi.stats.distribution.IQuantile
+       kixi.stats.protocols.IQuantile
        (cdf [_ x]
          (nan->nil (.cdf digest x)))
        (quantile [_ q]

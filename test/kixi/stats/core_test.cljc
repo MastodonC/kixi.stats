@@ -310,8 +310,8 @@
 #?(:clj
    (deftest histogram-test
      (let [histogram (transduce identity kixi/histogram (range 10))]
-       (is (satisfies? kixi.stats.distribution/IBounded histogram))
-       (is (satisfies? kixi.stats.distribution/IQuantile histogram)))))
+       (is (satisfies? kixi.stats.protocols/IBounded histogram))
+       (is (satisfies? kixi.stats.protocols/IQuantile histogram)))))
 
 #?(:clj
    (deftest summary-test

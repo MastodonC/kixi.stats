@@ -13,5 +13,5 @@
   test-opts
   (for-all [xs (gen/vector numeric)]
     (let [digest (transduce identity (sut/t-digest {:compression 100}) xs)]
-      (is (satisfies? kixi.stats.distribution/IBounded digest))
-      (is (satisfies? kixi.stats.distribution/IQuantile digest)))))
+      (is (satisfies? kixi.stats.protocols/IBounded digest))
+      (is (satisfies? kixi.stats.protocols/IQuantile digest)))))
