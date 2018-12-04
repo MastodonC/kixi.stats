@@ -48,7 +48,7 @@
 (defn cross-tabulate
   "Given a sequence of n functions, each of which returns a categorical value
   (e.g. keyword or string) of a factor, calculates an n-dimensional contingency table
-  implementing IContingencyTable. This can be passed to kixi.stats.test/chi-squared-test
+  implementing PContingencyTable. This can be passed to kixi.stats.test/chi-squared-test
   to determine if the relationship between factors is significant.
   See also: kixi.stats.core/chi-squared-test"
   [& fxs]
@@ -66,7 +66,7 @@
         (inc n)])
       ([[cells margins n]]
        (let [dimensions 2]
-         (reify p/IContingencyTable
+         (reify p/PContingencyTable
            (cell [_ coordinates]
              (get cells coordinates 0))
            (grand-total [_] n)

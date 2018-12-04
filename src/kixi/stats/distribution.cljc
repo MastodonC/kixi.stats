@@ -182,16 +182,16 @@
 ;;;; Protocol helpers
 
 (defn ^:no-doc sampleable->seq
-  ([^kixi.stats.protocols.IRandomVariable distribution]
+  ([^kixi.stats.protocols.PRandomVariable distribution]
    (sampleable->seq distribution (make-random)))
-  ([^kixi.stats.protocols.IRandomVariable distribution rng]
+  ([^kixi.stats.protocols.PRandomVariable distribution rng]
    (lazy-seq
     (let [[r1 r2] (split rng)]
       (cons (sample-1 distribution r1)
             (sampleable->seq distribution r2))))))
 
 (defn ^:no-doc default-sample-n
-  [^kixi.stats.protocols.IRandomVariable distribution n rng]
+  [^kixi.stats.protocols.PRandomVariable distribution n rng]
   (take n (sampleable->seq distribution rng)))
 
 (declare ->Binomial)
@@ -223,7 +223,7 @@
 
 (deftype ^:no-doc Uniform
     [a b]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (+ (* (rand-double rng) (- b a)) a))
     (sample-n [this n rng]
@@ -235,7 +235,7 @@
 
 (deftype ^:no-doc Exponential
     [rate]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (/ (- (log (rand-double rng))) rate))
     (sample-n [this n rng]
@@ -247,12 +247,12 @@
 
 (deftype ^:no-doc Binomial
     [n p]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (rand-binomial n p rng))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    p/IDiscreteRandomVariable
+    p/PDiscreteRandomVariable
     (sample-frequencies [this n' rng]
       (-> (sample-n this n' rng)
           (frequencies)))
@@ -263,7 +263,7 @@
 
 (deftype ^:no-doc Bernoulli
     [p]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (< (rand-double rng) p))
     (sample-n [this n rng]
@@ -271,7 +271,7 @@
         (-> (concat (repeat v true)
                     (repeat (- n v) false))
             (shuffle rng))))
-    p/IDiscreteRandomVariable
+    p/PDiscreteRandomVariable
     (sample-frequencies [this n rng]
       (let [v (sample-1 (->Binomial n p) rng)]
         {true v false (- n v)}))
@@ -282,12 +282,12 @@
 
 (deftype ^:no-doc Normal
     [mu sd]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (+ (* (rand-normal rng) sd) mu))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    p/IQuantile
+    p/PQuantile
     (cdf [this x]
       (* 0.5 (+ 1 (erf (/ (- x mu)
                           (sqrt (* 2 sd sd)))))))
@@ -322,7 +322,7 @@
 
 (deftype ^:no-doc Gamma
     [shape scale]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (* (rand-gamma shape rng) scale))
     (sample-n [this n rng]
@@ -334,7 +334,7 @@
 
 (deftype ^:no-doc Beta
     [alpha beta]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (rand-beta alpha beta rng))
     (sample-n [this n rng]
@@ -346,7 +346,7 @@
 
 (deftype ^:no-doc BetaBinomial
     [n alpha beta]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (let [[r1 r2] (split rng)
             p (rand-beta alpha beta r1)]
@@ -360,7 +360,7 @@
 
 (deftype ^:no-doc ChiSquared
     [k]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (* (rand-gamma (/ k 2) rng) 2))
     (sample-n [this n rng]
@@ -372,7 +372,7 @@
 
 (deftype ^:no-doc F
     [d1 d2]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (let [[r1 r2] (split rng)
             x1 (* (rand-gamma (/ d1 2) r1) 2)
@@ -387,7 +387,7 @@
 
 (deftype ^:no-doc Poisson
     [lambda]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (let [l (exp (- lambda))]
         (loop [p 1 k 0 rng rng]
@@ -404,7 +404,7 @@
 
 (deftype ^:no-doc Weibull
     [shape scale]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (* (pow (- (log (rand-double rng)))
               (/ 1 shape))
@@ -418,12 +418,12 @@
 
 (deftype ^:no-doc Categorical
     [ks ps]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (first (categorical-sample ks ps 1 rng)))
     (sample-n [this n rng]
       (shuffle (categorical-sample ks ps n rng) rng))
-    p/IDiscreteRandomVariable
+    p/PDiscreteRandomVariable
     (sample-frequencies [this n rng]
       (loop [coll (transient {}) n n
              rem 1 rng rng
@@ -443,7 +443,7 @@
 
 (deftype ^:no-doc Multinomial
     [n ps]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (loop [coll (transient []) n n
              rem 1 rng rng
@@ -457,7 +457,7 @@
           (persistent! coll))))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    p/IDiscreteRandomVariable
+    p/PDiscreteRandomVariable
     (sample-frequencies [this n rng]
       (frequencies (sample-n this n rng)))
     #?@(:clj (clojure.lang.ISeq
@@ -467,7 +467,7 @@
 
 (deftype ^:no-doc Dirichlet
     [as]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (let [rs (split-n rng (count as))
             xs (map #(rand-gamma %1 %2) as rs)
@@ -482,14 +482,14 @@
 
 (deftype ^:no-doc DirichletMultinomial
     [n as]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (let [[r1 r2] (split rng)
             ps (sample-1 (->Dirichlet as) r1)]
         (sample-1 (->Multinomial n ps) r2)))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    p/IDiscreteRandomVariable
+    p/PDiscreteRandomVariable
     (sample-frequencies [this n rng]
       (frequencies (sample-n this n rng)))
     #?@(:clj (clojure.lang.ISeq
@@ -510,19 +510,19 @@
 
 (defn iqr
   "Returns the interquartile range"
-  [^kixi.stats.protocols.IQuantile distribution]
+  [^kixi.stats.protocols.PQuantile distribution]
   (- (quantile distribution 0.75)
      (quantile distribution 0.25)))
 
 (defn median
   "Returns the median"
-  [^kixi.stats.protocols.IQuantile distribution]
+  [^kixi.stats.protocols.PQuantile distribution]
   (quantile distribution 0.5))
 
 (defn summary
   "Returns the 5-number distribution summary
   and the interquartile range."
-  [^kixi.stats.protocols.IQuantile distribution]
+  [^kixi.stats.protocols.PQuantile distribution]
   (let [q1 (quantile distribution 0.25)
         q3 (quantile distribution 0.75)]
     {:min (minimum distribution)
@@ -642,18 +642,18 @@
 (defn draw
   "Returns a single variate from the distribution.
   An optional seed long will ensure deterministic results"
-  ([^kixi.stats.protocols.IRandomVariable distribution]
+  ([^kixi.stats.protocols.PRandomVariable distribution]
    (draw distribution {}))
-  ([^kixi.stats.protocols.IRandomVariable distribution {:keys [seed]}]
+  ([^kixi.stats.protocols.PRandomVariable distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-1 distribution rng))))
 
 (defn sample
   "Returns n variates from the distribution.
   An optional seed long will ensure deterministic results"
-  ([n ^kixi.stats.protocols.IRandomVariable distribution]
+  ([n ^kixi.stats.protocols.PRandomVariable distribution]
    (sample n distribution {}))
-  ([n ^kixi.stats.protocols.IRandomVariable distribution {:keys [seed]}]
+  ([n ^kixi.stats.protocols.PRandomVariable distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-n distribution n rng))))
 
@@ -662,8 +662,8 @@
   of a given length from a discrete distribution
   such as the Bernoulli, binomial or categorical.
   An optional seed long will ensure deterministic results"
-  ([n ^kixi.stats.protocols.IDiscreteRandomVariable distribution]
+  ([n ^kixi.stats.protocols.PDiscreteRandomVariable distribution]
    (sample-summary n distribution {}))
-  ([n ^kixi.stats.protocols.IDiscreteRandomVariable distribution {:keys [seed]}]
+  ([n ^kixi.stats.protocols.PDiscreteRandomVariable distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-frequencies distribution n rng))))
