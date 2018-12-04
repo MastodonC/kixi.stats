@@ -1,10 +1,11 @@
 (ns kixi.stats.core
-  (:require [kixi.stats.math :refer [sq sqrt pow root infinity negative-infinity infinite?]]
+  (:require [kixi.stats.estimate :as e]
+            [kixi.stats.math :refer [sq sqrt pow root infinity negative-infinity infinite?]]
             [kixi.stats.test :as t]
             [kixi.stats.protocols :as p]
             [redux.core :refer [fuse-matrix]]
             #?@(:clj [[kixi.stats.distribution :as d]
-                      [kixi.stats.digest :refer [t-digest]]]))
+                      [kixi.stats.digest :as digest]]))
   (:refer-clojure :exclude [count min max]))
 
 (defn ^:no-doc somef
@@ -28,7 +29,7 @@
 #?(:clj
    (def histogram
      "Calculates a histogram of numeric inputs using the t-digest with default arguments."
-     (t-digest {:compression 100})))
+     (digest/t-digest {:compression 100})))
 
 #?(:clj
    (def median
@@ -463,31 +464,7 @@
        (when (and r-tilde k-tilde (> r-tilde 1) (> k-tilde 1))
          (sqrt (/ (/ chi-squared n) (clojure.core/min (- r-tilde 1) (- k-tilde 1)))))))))
 
-(defn sum-squares
-  [fx fy]
-  (fn
-    ([] [0.0 0.0 0.0 0.0 0.0 0.0])
-    ([[^double c ^double mx ^double my ^double ssx ^double ssy ^double ssxy :as acc] e]
-     (let [x (fx e)
-           y (fy e)]
-       (if (or (nil? x) (nil? y))
-         acc
-         (let [x   (double x)
-               y   (double y)
-               c'  (inc c)
-               mx' (+ mx (/ (- x mx) c'))
-               my' (+ my (/ (- y my) c'))]
-           [c' mx' my'
-            (+ ssx  (* (- x mx') (- x mx)))
-            (+ ssy  (* (- y my') (- y my)))
-            (+ ssxy (* (- x mx') (- y my)))]))))
-    ([[c mx my ssx ssy ssxy]]
-     {:n c
-      :x-bar mx
-      :y-bar my
-      :ss-xy ssxy
-      :ss-x  ssx
-      :ss-y  ssy})))
+(def sum-squares digest/sum-squares)
 
 (defn simple-linear-regression
   "Given two functions: (fx input) and (fy input), each of which returns a
@@ -497,47 +474,83 @@
   values for fx and fy, the linear relationship is nil. See
   https://en.wikipedia.org/wiki/Simple_linear_regression."
   [fx fy]
-  (post-complete (sum-squares fx fy)
-                 (fn [{:keys [x-bar y-bar ss-x ss-xy]}]
-                   (when-not (zero? ss-x)
-                     (let [b (/ ss-xy ss-x)]
-                       [(- y-bar (* x-bar b)) b])))))
+  (post-complete (sum-squares fx fy) e/simple-linear-regression))
 
-(def standard-error-estimate
+(defn regression-standard-error
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
-  (let [f (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]} x]
-            (when (and (> n 2) (not (zero? ss-x)))
-              (sqrt
-               (* (/ 1 (- n 2))
-                  (- ss-y (/ (sq ss-xy) ss-x))
-                  (+ (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))]
-    (fn
-      ([sum-squares x]
-       (f sum-squares x))
-      ([fx fy x]
-       (post-complete (sum-squares fx fy) #(f % x))))))
+  ([fx fy]
+   (post-complete (sum-squares fx fy)
+                  (fn [sum-squares]
+                    (reify p/PDependent
+                      (measure [_ x]
+                        (e/regression-standard-error sum-squares x))))))
+  ([fx fy x]
+   (post-complete (sum-squares fx fy) #(e/regression-standard-error % x))))
 
-(def standard-error-prediction
+(defn regression-confidence-interval
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
-  (let [f (fn [{:keys [n x-bar y-bar ss-x ss-y ss-xy]} x]
-            (when (and (> n 2) (not (zero? ss-x)))
-              (sqrt
-               (* (/ 1 (- n 2))
-                  (- ss-y (/ (sq ss-xy) ss-x))
-                  (+ 1 (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))]
-    (fn
-      ([sum-squares x]
-       (f sum-squares x))
-      ([fx fy x]
-       (post-complete (sum-squares fx fy) #(f % x))))))
+  ([fx fy]
+   (post-complete (sum-squares fx fy)
+                  (fn [sum-squares]
+                    (reify p/PDependentWithSignificance
+                      (measure-with-significance [_ x alpha]
+                        (e/regression-confidence-interval sum-squares x alpha))))))
+  ([fx fy alpha]
+   (post-complete (sum-squares fx fy)
+                  (fn [sum-squares]
+                    (reify p/PDependent
+                      (measure [_ x]
+                        (e/regression-confidence-interval sum-squares x alpha))))))
+  ([fx fy alpha x]
+   (post-complete (sum-squares fx fy)
+                  #(e/regression-confidence-interval % x alpha))))
+
+(defn regression-prediction-standard-error
+  "Given two functions: (fx input) and (fy input), each of which returns a
+  number, and an x value, calculates the standard error of the least
+  squares linear model of fx and fy over inputs.
+  Ignores any records with fx or fy are nil. If there are no records with
+  values for fx and fy, the standard error of the estimate is nil."
+  ([fx fy]
+   (post-complete (sum-squares fx fy)
+                  (fn [sum-squares]
+                    (when sum-squares
+                      (reify p/PDependent
+                        (measure [_ x]
+                          (e/regression-prediction-standard-error sum-squares x)))))))
+  ([fx fy x]
+   (post-complete (sum-squares fx fy)
+                  #(e/regression-prediction-standard-error % x))))
+
+(defn regression-prediction-confidence-interval
+  "Given two functions: (fx input) and (fy input), each of which returns a
+  number, and an x value, calculates the standard error of the least
+  squares linear model of fx and fy over inputs.
+  Ignores any records with fx or fy are nil. If there are no records with
+  values for fx and fy, the standard error of the estimate is nil."
+  ([fx fy]
+   (post-complete (sum-squares fx fy)
+                  (fn [sum-squares]
+                    (reify p/PDependentWithSignificance
+                      (measure-with-significance [_ x alpha]
+                        (e/regression-prediction-interval sum-squares x alpha))))))
+  ([fx fy alpha]
+   (post-complete (sum-squares fx fy)
+                  (fn [sum-squares]
+                    (reify p/PDependent
+                      (measure [_ x]
+                        (e/regression-prediction-interval sum-squares x alpha))))))
+  ([fx fy alpha x]
+   (post-complete (sum-squares fx fy)
+                  #(e/regression-prediction-interval % x alpha))))
 
 (defn chi-squared-test
   "Given a sequence of functions, each of which returns the categorical value

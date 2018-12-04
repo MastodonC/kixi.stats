@@ -2,6 +2,7 @@
   (:require [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [kixi.stats.core :as kixi]
+            [kixi.stats.estimate :as estimate]
             [kixi.stats.test :refer [simple-z-test z-test]]
             [kixi.stats.test-helpers :as t :refer [=ish numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
@@ -539,7 +540,7 @@
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
-    (is (=ish (transduce identity (kixi/simple-linear-regression :x :y) coll)
+    (is (=ish (some-> (transduce identity (kixi/simple-linear-regression :x :y) coll) p/parameters)
               (simple-linear-regression' :x :y coll)))))
 
 (deftest simple-linear-regression-test
@@ -551,19 +552,19 @@
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
             x gen/int]
-    (is (= (kixi/standard-error-estimate
+    (is (= (estimate/regression-standard-error
             (transduce identity (kixi/sum-squares :x :y) coll) x)
-           (transduce identity (kixi/standard-error-estimate :x :y x) coll)))
-    (is (= (kixi/standard-error-prediction
+           (transduce identity (kixi/regression-standard-error :x :y x) coll)))
+    (is (= (estimate/regression-prediction-standard-error
             (transduce identity (kixi/sum-squares :x :y) coll) x)
-           (transduce identity (kixi/standard-error-prediction :x :y x) coll)))))
+           (transduce identity (kixi/regression-prediction-standard-error :x :y x) coll)))))
 
 (defspec standard-error-estimate-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
             x gen/int]
-    (is (=ish (transduce identity (kixi/standard-error-estimate :x :y x) coll)
+    (is (=ish (transduce identity (kixi/regression-standard-error :x :y x) coll)
               (standard-error-estimate' :x :y x coll)))))
 
 (defspec standard-error-prediction-spec
@@ -571,7 +572,7 @@
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
             x gen/int]
-    (is (=ish (transduce identity (kixi/standard-error-prediction :x :y x) coll)
+    (is (=ish (transduce identity (kixi/regression-prediction-standard-error :x :y x) coll)
               (standard-error-prediction' :x :y x coll)))))
 
 (deftest cross-tabulate-test
