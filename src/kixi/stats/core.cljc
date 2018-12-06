@@ -1,11 +1,11 @@
 (ns kixi.stats.core
-  (:require [kixi.stats.estimate :as e]
+  (:require [kixi.stats.digest :as digest]
+            [kixi.stats.distribution :as d]
+            [kixi.stats.estimate :as e]
             [kixi.stats.math :refer [sq sqrt pow root infinity negative-infinity infinite?]]
-            [kixi.stats.test :as t]
             [kixi.stats.protocols :as p]
-            [redux.core :refer [fuse-matrix]]
-            #?@(:clj [[kixi.stats.distribution :as d]
-                      [kixi.stats.digest :as digest]]))
+            [kixi.stats.test :as t]
+            [redux.core :refer [fuse-matrix]])
   (:refer-clojure :exclude [count min max]))
 
 (defn ^:no-doc somef
