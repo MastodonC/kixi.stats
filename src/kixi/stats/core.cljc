@@ -5,7 +5,6 @@
             [redux.core :refer [fuse-matrix]]
             #?@(:clj [[kixi.stats.distribution :as d]
                       [kixi.stats.digest :refer [t-digest]]]))
-  #?(:clj (:import [org.apache.commons.math3.analysis.interpolation LoessInterpolator]))
   (:refer-clojure :exclude [count min max]))
 
 (defn ^:no-doc somef
@@ -539,45 +538,6 @@
        (f sum-squares x))
       ([fx fy x]
        (post-complete (sum-squares fx fy) #(f % x))))))
-
-#?(:clj
-   (defn locally-weighted-regression
-     "Given two functions: (fx input) and (fy input), each of which returns a
-  number, calculates a locally weighted regression model (LOESS).
-  Ignores any records with fx or fy are nil.
-  Returns nill if fewer than (/ 2.0 bandwidth) unique xs are supplied.
-  Return value implements IBounded and IPredictiveModel"
-     ([fx fy]
-      (locally-weighted-regression fx fy {}))
-     ([fx fy {:keys [bandwidth robustness-iters accuracy]
-              :or {bandwidth 0.3 robustness-iters 2 accuracy 1e-12}}]
-      (fn
-        ([] (sorted-map))
-        ([acc e]
-         (let [x (fx e)
-               y (fy e)]
-           (if (and x y)
-             (update acc x conj y)
-             acc)))
-        ([acc]
-         (when (>= (* (clojure.core/count acc) bandwidth) 2.0)
-           (let [[min max] ((juxt first last) (keys acc))
-                 [xs ys] (->> (for [[k vs] acc]
-                                (vector k (transduce identity mean vs)))
-                              (apply map vector))
-                 spline (-> (LoessInterpolator. bandwidth
-                                                robustness-iters
-                                                accuracy)
-                            (.interpolate (double-array xs)
-                                          (double-array ys)))]
-             (reify
-               p/IBounded
-               (minimum [_] min)
-               (maximum [_] max)
-               p/IPredictiveModel
-               (predict [_ x]
-                 (when (<= min x max)
-                   (.value spline (double x))))))))))))
 
 (defn chi-squared-test
   "Given a sequence of functions, each of which returns the categorical value

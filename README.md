@@ -51,7 +51,6 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * MSE / RMSE
 * Correlation matrix
 * Simple linear regression
-* Locally weighted regression (LOESS)
 * Standard error of the mean
 * Standard error of the estimate
 * Standard error of the prediction
