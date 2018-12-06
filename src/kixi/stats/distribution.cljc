@@ -59,36 +59,33 @@
           alpha (* (+ 2.83 (/ 5.1 b)) rnpq)
           vr (- 0.92 (/ 4.2 b))
           urvr (* 0.86 vr)]
+      ;; 1
       (loop [rng rng]
         (let [v (rand-double rng)]
           (if (<= v urvr)
             (let [u (- (/ v vr) 0.43)]
               (int (floor (+ (* (+ (/ (* 2 a) (- 0.5 (abs u))) b) u) c))))
             (let [[r1 r2] (split rng)
+                  ;; 2
                   [u v] (if (>= v vr)
                           [(- (rand-double r1) 0.5) v]
                           (let [u (- (/ v vr) 0.93)]
                             [(- (* 0.5 (if (pos? u) 1 -1)) u) (* (rand-double r1) vr)]))
+                  ;; 3
                   us (- 0.5 (abs u))
                   k (int (floor (+ (* (+ (* 2 (/ a us)) b) u) c)))]
               (if (<= 0 k n)
                 (let [v (* v (/ alpha (+ (/ a (sq us)) b)))
                       km (abs (- k m))]
                   (if (<= km 15)
-                    (let [f 1
-                          [f v] (cond
-                                  (< m k) (loop [i m
-                                                 f f]
-                                            (if (= i k)
-                                              [f v]
-                                              (recur (inc i) (* f (/ nr (- i r))))))
-                                  (> m k) (loop [i k
-                                                 v v]
-                                            (if (= i m)
-                                              [f v]
-                                              (recur (inc i) (* v (/ nr (- i r))))))
-                                  :else [f v])]
+                    ;; 3.1
+                    (let [f 1.0
+                          fx (fn [x i] (* x (- (/ nr (inc i)) r)))
+                          [f v] (if (< m k)
+                                  [(reduce fx f (range m k)) v]
+                                  [f (reduce fx v (range k m))])]
                       (if (<= v f) k (recur r2)))
+                    ;; 3.2
                     (let [v (log v)
                           p (* (/ km npq) (+ (/ (+ (* (+ (/ km 3) 0.625) km) 0.1666666666666667) npq) 0.5))
                           t (/ (* (- km) km) (* 2 npq))]
@@ -96,8 +93,10 @@
                         (< v (- t p)) k
                         (> v (+ t p)) (recur r2)
                         :else
+                        ;; 3.3
                         (let [nm (inc (- n m))
                               h (+ (* (+ m 0.5) (log (/ (inc m) (* r nm)))) (btrd-f m) (btrd-f (- n m)))
+                              ;; 3.4
                               nk (inc (- n k))]
                           (if (<= v (+ h
                                        (* (inc n) (log (/ nm nk)))
