@@ -1,6 +1,6 @@
 (ns kixi.stats.distribution
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma sq floor erf erfcinv]]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma sq floor erf erfcinv] :as m]
             [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
@@ -210,6 +210,14 @@
                (rest ks) (rest ps)))
       coll)))
 
+(defn ^:no-doc quantile-t
+  [dof p]
+  (let [x (m/ibetainv (* 2 (min p (- 1 p)))
+                      (* 0.5 dof)
+                      0.5)
+        x (sqrt (* dof (/ (- 1 x) x)))]
+    (if (> p 0.5) x (- x))))
+
 
 ;;;; Protocol implementations
 
@@ -285,6 +293,28 @@
                           (sqrt (* 2 sd sd)))))))
     (quantile [this p]
       (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu))
+    #?@(:clj (clojure.lang.ISeq
+              (seq [this] (sampleable->seq this)))
+        :cljs (ISeqable
+               (-seq [this] (sampleable->seq this)))))
+
+(deftype ^:no-doc T
+    [dof]
+    p/IRandomVariable
+    (sample-1 [this rng]
+      (let [[r1 r2] (split rng)]
+        (* (rand-normal r1)
+           (sqrt (/ dof (* 2 (rand-gamma (* 0.5 dof) r2)))))))
+    (sample-n [this n rng]
+      (default-sample-n this n rng))
+    p/IQuantile
+    (cdf [this x]
+      (let [dof2 (* dof 0.5)]
+        (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
+                    (* 2 (sqrt (+ (sq x) dof))))
+                 dof2 dof2)))
+    (quantile [this p]
+      (quantile-t dof p))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
@@ -531,6 +561,12 @@
   Params: {:mu ∈ ℝ, :sd ∈ ℝ}"
   [{:keys [mu sd]}]
   (->Normal mu sd))
+
+(defn t
+  "Returns a t distribution.
+  Params: dof ∈ ℕ > 0"
+  [dof]
+  (->T dof))
 
 (defn gamma
   "Returns a gamma distribution.

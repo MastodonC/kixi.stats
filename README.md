@@ -18,6 +18,7 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Multinomial
 * Normal
 * Poisson
+* Student's T
 * Uniform
 * Weibull
 

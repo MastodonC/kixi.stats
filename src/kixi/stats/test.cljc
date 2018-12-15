@@ -1,5 +1,6 @@
 (ns kixi.stats.test
-  (:require [kixi.stats.math :refer [abs erf pow sq sqrt lower-regularized-gamma]]
+  (:require [kixi.stats.distribution :as d]
+            [kixi.stats.math :refer [abs erf pow sq sqrt lower-regularized-gamma]]
             [kixi.stats.protocols :as p]
             [clojure.math.combinatorics :refer [cartesian-product]]))
 
@@ -29,6 +30,13 @@
     :lower (* 0.5 (+ 1 (erf (/ z (sqrt 2)))))
     :upper (- 1 (* 0.5 (+ 1 (erf (/ z (sqrt 2))))))
     :both (+ 1 (erf (/ z (sqrt 2))))))
+
+(defn critical-t
+  [dof alpha & [{:keys [tails] :or {tails :both}}]]
+  (case tails
+    :lower (- (d/quantile-t dof (- 1 alpha)))
+    :upper (d/quantile-t dof (- 1 alpha))
+    :both (d/quantile-t dof (- 1 (* 0.5 alpha)))))
 
 (defn simple-z-test
   "Calculates the z-test of statistical significance for a sample mean.

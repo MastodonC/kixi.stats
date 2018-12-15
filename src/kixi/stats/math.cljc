@@ -226,6 +226,127 @@
               (recur (inc i) b c d h)
               (- 1 (* h (exp (- (* a (log x)) x (log-gamma a))))))))))))
 
+(defn log-beta
+  "Computes the log of the beta function"
+  [a b]
+  (- (+ (log-gamma a) (log-gamma b)) (log-gamma (+ a b))))
+
+(defn beta
+  "Computes the beta function"
+  [a b]
+  (when (and (pos? a) (pos? b))
+    (if (> (+ a b) 170)
+      (exp (log-beta a b))
+      (/ (* (gamma a) (gamma b))
+         (gamma (+ a b))))))
+
+(defn betacf
+  "Evaluates the continued fraction for the incomplete beta function.
+  Modified Lentz's method"
+  [x a b]
+  (let [fpmin 1e-30
+        check (fn [x] (if (< (abs x) fpmin) fpmin x))
+        qab (+ a b)
+        qap (inc a)
+        qam (dec a)
+        d (/ 1 (check (- 1 (/ (* x qab) qap))))]
+    (loop [m 1
+           h d
+           c 1
+           d d]
+      (let [m2 (* 2 m)
+            aa (* m (- b m) (/ x (* (+ qam m2) (+ a m2))))
+            d (/ 1 (check (+ 1 (* aa d))))
+            c (check (+ 1 (/ aa c)))
+            h (* h d c)
+            aa (* (- (+ a m)) (+ qab m) (/ x (* (+ a m2) (+ qap m2))))
+            d (/ 1 (check (+ 1 (* aa d))))
+            c (check (+ 1 (/ aa c)))
+            del (* d c)
+            h (* h del)]
+        (if (or (< (abs del) 3e-7)
+                (>= m 100))
+          h
+          (recur (inc m) h c d))))))
+
+(defn ibeta
+  "Returns the incomplete beta function I_x(a,b)"
+  [x a b]
+  (when (<= 0 x 1)
+    (let [bt (if (or (== a 1)
+                     (== b 1))
+               0
+               (exp (+ (- (log-gamma (+ a b))
+                          (log-gamma a)
+                          (log-gamma b))
+                       (* a (log x))
+                       (* b (log (- 1 x))))))]
+      (if (< x (/ (inc a) (+ a b 2)))
+        (* bt (/ (betacf x a b) a))
+        (- 1 (* bt (/ (betacf (- 1 x) b a) b)))))))
+
+(defn ibetainv
+  "Returns the inverse of the incomplete beta function"
+  [p a b]
+  (cond
+    (<= p 0) 0.0
+    (>= p 1) 1.0
+    :else
+    (let [eps 1e-8
+          a1 (dec a)
+          b1 (dec b)
+          x (if (and (>= a 1)
+                     (>= b 1))
+              (let [pp (if (< p 0.5) p (- 1 p))
+                    t (sqrt (* -2 (log pp)))
+                    x (- (/ (+ 2.30753 (* t 0.27061))
+                            (inc (* t (+ 0.99229
+                                         (* t 0.04481))))) t)
+                    x (if (< p 0.5) (- x) x)
+                    al (/ (- (sq x) 3) 6)
+                    h (/ 2 (+ (/ 1 (dec (* 2 a)))
+                              (/ 1 (dec (* 2 b)))))
+                    w (- (/ (* x (sqrt (+ al h))) h)
+                         (* (- (/ 1 (dec (* 2 b)))
+                               (/ 1 (dec (* 2 a))))
+                            (+ al (/ 5 6) (/ -2 (* 3 h)))))]
+                (/ a (+ a (* b (exp (* 2 w))))))
+              (let [lna (log (/ a (+ a b)))
+                    lnb (log (/ b (+ a b)))
+                    t (/ (exp (* a lna)) a)
+                    u (/ (exp (* b lnb)) b)
+                    w (+ t u)]
+                (if (< p (/ t w))
+                  (pow (* a w p) (/ 1 a))
+                  (- 1 (pow (* b w (- 1 p)) (/ 1 b))))))
+          afac (- (log-gamma (+ a b))
+                  (log-gamma a)
+                  (log-gamma b))]
+      (loop [j 0
+             x x]
+        (if (or (== x 0)
+                (== x 1)
+                (>= j 10))
+          x
+          (let [err (- (ibeta x a b) p)
+                t (exp (+ (* a1 (log x))
+                          (* b1 (log (- 1 x)))
+                          afac))
+                u (/ err t)
+                t (/ u (- 1 (* 0.5 (min 1 (* u (- (/ a1 x)
+                                                  (/ b1 (- 1 x))))))))
+                x (- x t)
+                x (cond
+                    (<= x 0)
+                    (* 0.5 (+ x t))
+                    (>= x 1)
+                    (* 0.5 (+ x t 1))
+                    :else x)]
+            (if (and (> j 0)
+                     (< (abs t) (* eps x)))
+              x
+              (recur (inc j) x))))))))
+
 (defn erf
   "Computes the error function"
   [x]
