@@ -300,14 +300,14 @@
 
 (deftype ^:no-doc T
     [dof]
-    p/IRandomVariable
+    p/PRandomVariable
     (sample-1 [this rng]
       (let [[r1 r2] (split rng)]
         (* (rand-normal r1)
            (sqrt (/ dof (* 2 (rand-gamma (* 0.5 dof) r2)))))))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    p/IQuantile
+    p/PQuantile
     (cdf [this x]
       (let [dof2 (* dof 0.5)]
         (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
