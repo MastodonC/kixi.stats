@@ -26,8 +26,8 @@
 
 (defn regression-confidence-interval
   [{:keys [n] :as sum-squares} x alpha]
-  (let [[offset slope] (simple-linear-regression sum-squares)
-        y-hat (+ offset (* slope x))
+  (let [regression (simple-linear-regression sum-squares)
+        y-hat (p/measure regression x)
         se (regression-standard-error sum-squares x)
         df (dec n)
         t-crit (t/critical-t df alpha)
@@ -46,8 +46,8 @@
 
 (defn regression-prediction-interval
   [{:keys [n] :as sum-squares} x alpha]
-  (let [[offset slope] (simple-linear-regression sum-squares)
-        y-hat (+ offset (* slope x))
+  (let [regression (simple-linear-regression sum-squares)
+        y-hat (p/measure regression x)
         se (regression-prediction-standard-error sum-squares x)
         df (dec n)
         t-crit (t/critical-t df alpha)
