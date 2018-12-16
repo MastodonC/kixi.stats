@@ -1,6 +1,7 @@
 (ns kixi.stats.estimate
   (:require [kixi.stats.math :refer [sq sqrt]]
-            [kixi.stats.protocols :as p]))
+            [kixi.stats.protocols :as p]
+            [kixi.stats.test :as t]))
 
 (defn simple-linear-regression
   [{:keys [x-bar y-bar ss-x ss-xy] :as sum-squares}]
@@ -24,14 +25,16 @@
         (+ (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))
 
 (defn regression-confidence-interval
-  [sum-squares x alpha]
+  [{:keys [n] :as sum-squares} x alpha]
   (let [[offset slope] (simple-linear-regression sum-squares)
         y-hat (+ offset (* slope x))
         se (regression-standard-error sum-squares x)
-        m (* 0.95 se)]
+        df (dec n)
+        t-crit (t/critical-t df alpha)
+        err (* t-crit se)]
     (reify p/PInterval
-      (lower [_] (- y-hat m))
-      (upper [_] (+ y-hat m)))))
+      (lower [_] (- y-hat err))
+      (upper [_] (+ y-hat err)))))
 
 (defn regression-prediction-standard-error
   [{:keys [n x-bar y-bar ss-x ss-y ss-xy] :as sum-squares} x]
@@ -42,11 +45,13 @@
         (+ 1 (/ 1 n) (/ (sq (- x x-bar)) ss-x))))))
 
 (defn regression-prediction-interval
-  [sum-squares x alpha]
+  [{:keys [n] :as sum-squares} x alpha]
   (let [[offset slope] (simple-linear-regression sum-squares)
         y-hat (+ offset (* slope x))
         se (regression-prediction-standard-error sum-squares x)
-        m (* 0.95 se)]
+        df (dec n)
+        t-crit (t/critical-t df alpha)
+        err (* t-crit se)]
     (reify p/PInterval
-      (lower [_] (- y-hat m))
-      (upper [_] (+ y-hat m)))))
+      (lower [_] (- y-hat err))
+      (upper [_] (+ y-hat err)))))
