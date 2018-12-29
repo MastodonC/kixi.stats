@@ -7,7 +7,7 @@
 (defn chi-squared-test
   "Calculates the X^2 test of independence for a given contingency table.
   See kixi.stats.core/cross-tabulate"
-  [^kixi.stats.protocols.IContingencyTable table]
+  [^kixi.stats.protocols.PContingencyTable table]
   (let [margins (p/margin-totals table)
         size (p/size table)
         factors (count size)
