@@ -126,6 +126,8 @@
            (sut/draw (sut/binomial {:n n :p p}) {:seed seed})))
     (is (= (sut/draw (sut/normal {:mu a :sd b}) {:seed seed})
            (sut/draw (sut/normal {:mu a :sd b}) {:seed seed})))
+    (is (= (sut/draw (sut/t d) {:seed seed})
+           (sut/draw (sut/t d) {:seed seed})))
     (is (= (sut/draw (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})
            (sut/draw (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})))
     (is (= (sut/draw (sut/beta {:alpha alpha :beta beta}) {:seed seed})
@@ -165,6 +167,8 @@
            (sut/sample n (sut/binomial {:n n :p p}) {:seed seed})))
     (is (= (sut/sample n (sut/normal {:mu a :sd b}) {:seed seed})
            (sut/sample n (sut/normal {:mu a :sd b}) {:seed seed})))
+    (is (= (sut/sample n (sut/t d) {:seed seed})
+           (sut/sample n (sut/t d) {:seed seed})))
     (is (= (sut/sample n (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})
            (sut/sample n (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})))
     (is (= (sut/sample n (sut/beta {:alpha alpha :beta beta}) {:seed seed})
@@ -251,6 +255,8 @@
                             (sut/binomial {:n n :p p})))
     (is (converges-to-mean? a
                             (sut/normal {:mu a :sd r})))
+    (is (converges-to-mean? 0.0
+                            (sut/t d)))
     (is (converges-to-mean? (/ s r)
                             (sut/gamma {:shape s :scale (/ 1 r)})))
     (is (converges-to-mean? (/ alpha (+ alpha beta))
