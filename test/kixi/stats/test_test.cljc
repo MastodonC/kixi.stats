@@ -13,35 +13,37 @@
                                 (repeat 4 {:x :a :y :y})
                                 (repeat 6 {:x :b :y :x})
                                 (repeat 8 {:x :b :y :y})))]
-    (is (=ish (sut/chi-squared-test xtab)
-              {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
+    (is (=ish (sut/p-value (sut/chi-squared-test xtab))
+              0.6903283294641935))
+    (is (=ish (:statistic (sut/chi-squared-test xtab))
+              0.1587301587301587))))
 
 (deftest simple-t-test-test
-  (let [p 0.0067167326028858]
-    (is (=ish (sut/simple-t-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :both})
-              {:p-value (* 2 p)}))
-    (is (=ish (sut/simple-t-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :lower})
-              {:p-value p}))
-    (is (=ish (sut/simple-t-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :upper})
-              {:p-value (- 1 p)}))
-    (is (=ish (sut/simple-t-test {:mu 96 :sd 12} {:mean 100 :n 55} {:tails :upper})
-              {:p-value p}))))
+  (let [p 0.00830793906096361]
+    (is (=ish (sut/p-value (sut/simple-t-test {:mu 100 :sd 12} {:mean 96 :n 55}) :<>)
+              (* 2 p)))
+    (is (=ish (sut/p-value (sut/simple-t-test {:mu 100 :sd 12} {:mean 96 :n 55}) :<)
+              p))
+    (is (=ish (sut/p-value (sut/simple-t-test {:mu 100 :sd 12} {:mean 96 :n 55}) :>)
+              (- 1 p)))
+    (is (=ish (sut/p-value (sut/simple-t-test {:mu 96 :sd 12} {:mean 100 :n 55}) :>)
+              p))))
 
 (deftest t-test-test
-  (is (=ish (sut/t-test {:mean 28 :sd 14.1 :n 75} {:mean 33 :sd 9.5 :n 50})
-            {:p-value 0.01785148959436078})))
+  (is (=ish (sut/p-value (sut/t-test {:mean 28 :sd 14.1 :n 75} {:mean 33 :sd 9.5 :n 50}) :<>)
+            0.01940896286137318)))
 
 (deftest simple-z-test-test
   (let [p 0.0067167326028858]
-    (is (=ish (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :both})
-              {:p-value (* 2 p)}))
-    (is (=ish (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :lower})
-              {:p-value p}))
-    (is (=ish (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55} {:tails :upper})
-              {:p-value (- 1 p)}))
-    (is (=ish (sut/simple-z-test {:mu 96 :sd 12} {:mean 100 :n 55} {:tails :upper})
-              {:p-value p}))))
+    (is (=ish (sut/p-value (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55}) :<>)
+              (* 2 p)))
+    (is (=ish (sut/p-value (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55}) :<)
+              p))
+    (is (=ish (sut/p-value (sut/simple-z-test {:mu 100 :sd 12} {:mean 96 :n 55}) :>)
+              (- 1 p)))
+    (is (=ish (sut/p-value (sut/simple-z-test {:mu 96 :sd 12} {:mean 100 :n 55}) :>)
+              p))))
 
 (deftest z-test-test
-  (is (=ish (sut/z-test {:mean 28 :sd 14.1 :n 75} {:mean 33 :sd 9.5 :n 50})
-            {:p-value 0.01785148959436078})))
+  (is (=ish (sut/p-value (sut/z-test {:mean 28 :sd 14.1 :n 75} {:mean 33 :sd 9.5 :n 50}) :<>)
+            0.01785148959436078)))

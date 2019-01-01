@@ -6,18 +6,9 @@
 
 (defrecord HypothesisTest [statistic distribution alternate])
 
-(defn critical-value
-  ([^HypothesisTest {:keys [distribution alternate]} alpha]
-   (case alternate
-     :<> (d/quantile distribution (- 1 (* 0.5 alpha)))
-     :<  (d/quantile distribution alpha)
-     :>  (d/quantile distribution (- 1 alpha))))
-  ([^HypothesisTest {:keys [distribution] :as test} alpha alternate]
-   (critical-value (assoc test :alternate alternate))))
-
 (defn significant?
-  ([^HypothesisTest {:keys [statistic alternate] :as test} alpha]
-   (let [critical (critical-value test alpha)]
+  ([^HypothesisTest {:keys [statistic distribution alternate] :as test} alpha]
+   (let [critical (d/critical-value distribution alpha alternate)]
      (case alternate
        :<> (> (abs statistic) critical)
        :<  (< statistic critical)
@@ -66,10 +57,8 @@
   n: the sample size
   See also: kixi.stats.core/simple-z-test"
   [{:keys [mu sd]} {:keys [mean n]}]
-  (when-let [z (and (pos? sd)
-                    (double (/ (- mean mu)
-                               (/ sd (sqrt n)))))]
-    (hypothesis-test z (d/normal {:mu 0.0 :sd sd}))))
+  (let [z (double (/ (- mean mu) (/ sd (sqrt n))))]
+    (hypothesis-test z (d/normal {:mu 0.0 :sd 1.0}))))
 
 (defn z-test
   "Calculates the z-test of statistical significance between two sample means.
@@ -82,7 +71,7 @@
                                  (/ (sq sd-y) n-y))))]
     (when-let [z (and (pos? sd-xy)
                       (double (/ (- mean-x mean-y) sd-xy)))]
-      (hypothesis-test z (d/normal {:mu 0.0 :sd sd-xy})))))
+      (hypothesis-test z (d/normal {:mu 0.0 :sd 1.0})))))
 
 (defn t-test
   "Calculates the t-test of statistical significance between two sample means.
@@ -94,9 +83,10 @@
     (when-let [sd-ab (and (pos? n-a) (pos? n-b)
                           (sqrt (+ (/ (sq sd-a) n-a)
                                    (/ (sq sd-b) n-b))))]
-      (let [dof (dec (min n-a n-b))
+      (let [dof (+ n-a n-b -2)
             t (and (pos? sd-ab)
                    (double (/ (- mean-a mean-b) sd-ab)))]
+        (println dof)
         (when (and t (pos? dof))
           (hypothesis-test t (d/t dof)))))))
  

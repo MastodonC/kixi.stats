@@ -313,8 +313,8 @@
   "Returns the incomplete beta function I_x(a,b)"
   [x a b]
   (when (<= 0 x 1)
-    (let [bt (if (or (== a 1)
-                     (== b 1))
+    (let [bt (if (or (== x 0)
+                     (== x 1))
                0
                (exp (+ (- (log-gamma (+ a b))
                           (log-gamma a)

@@ -676,3 +676,14 @@
   ([n ^kixi.stats.protocols.PDiscreteRandomVariable distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-frequencies distribution n rng))))
+
+(defn critical-value
+  ([^kixi.stats.protocols.PQuantile distribution]
+   (critical-value distribution 0.05))
+  ([^kixi.stats.protocols.PQuantile distribution alpha]
+   (critical-value distribution alpha :<>))
+  ([^kixi.stats.protocols.PQuantile distribution alpha tails]
+   (case tails
+     :<> (quantile distribution (- 1 (* 0.5 alpha)))
+     :<  (quantile distribution alpha)
+     :>  (quantile distribution (- 1 alpha)))))
