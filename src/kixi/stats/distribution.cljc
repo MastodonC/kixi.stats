@@ -218,6 +218,13 @@
         x (sqrt (* dof (/ (- 1 x) x)))]
     (if (> p 0.5) x (- x))))
 
+(defn ^:no-doc cdf-t
+  [dof x]
+  (let [dof2 (* dof 0.5)]
+    (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
+                (* 2 (sqrt (+ (sq x) dof))))
+             dof2 dof2))) 
+
 
 ;;;; Protocol implementations
 
@@ -309,10 +316,7 @@
       (default-sample-n this n rng))
     p/PQuantile
     (cdf [this x]
-      (let [dof2 (* dof 0.5)]
-        (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
-                    (* 2 (sqrt (+ (sq x) dof))))
-                 dof2 dof2)))
+      (cdf-t dof x))
     (quantile [this p]
       (quantile-t dof p))
     #?@(:clj (clojure.lang.ISeq
@@ -365,6 +369,11 @@
       (* (rand-gamma (/ k 2) rng) 2))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    p/PQuantile
+    (cdf [this x]
+      (m/lower-regularized-gamma (* 0.5 k) (* 0.5 x)))
+    (quantile [this p]
+      (* 2.0 (m/gamma-pinv p (* 0.5 k))))
     #?@(:clj (clojure.lang.ISeq
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable

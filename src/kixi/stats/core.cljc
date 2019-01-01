@@ -558,6 +558,59 @@
   [& fxs]
   (post-complete (apply cross-tabulate fxs) t/chi-squared-test))
 
+(defn simple-t-test
+  "Performs a simple t test against a specified population mean
+  and standard deviation. The standard deviation is optional,
+  if not provided, a 'plug-in' test using the sample's sd
+  will be performed instead.
+  mu: the population mean
+  sd: (optional) the population standard deviation
+  opts: (optional) see kixi.stats.test/simple-t-test for options"
+  [{:keys [mu sd]} & [opts]]
+  (if sd
+    (completing mean
+                (fn [[s c]]
+                  (when-not (zero? c)
+                    (t/simple-t-test {:mu mu :sd sd}
+                                     {:mean (/ s c) :n c}
+                                     opts))))
+    (completing variance
+                (fn [[c m ss]]
+                  (when-not (zero? c)
+                    (let [c' (dec c)
+                          var (if (pos? c') (/ ss c') 0)]
+                      (t/simple-t-test {:mu mu :sd (sqrt var)}
+                                       {:mean m :n c}
+                                       opts)))))))
+
+(defn t-test
+  "Given two functions of an input `(fx input)` and `(fy input)`, each of which
+  returns a number, performs the t test of mean significance of those functions over
+  inputs.
+
+  Ignores only inputs where both `(fx input)` and `(fy input)` are nil."
+  [fx fy & [opts]]
+  (fn
+    ([] [0.0 0.0 0.0 0.0 0.0 0.0])
+    ([[^double cx ^double cy ^double mx ^double my ^double ssx ^double ssy :as acc] e]
+     (let [x (some-> (fx e) double)
+           y (some-> (fy e) double)]
+       (if (and (nil? x) (nil? y))
+         acc
+         (let [cx' (cond-> cx x inc)
+               cy' (cond-> cy y inc)
+               mx' (cond-> mx x (+ (/ (- x mx) cx')))
+               my' (cond-> my y (+ (/ (- y my) cy')))
+               ssx' (cond-> ssx x (+ (* (- x mx') (- x mx))))
+               ssy' (cond-> ssy y (+ (* (- y my') (- y my))))]
+           [cx' cy' mx' my' ssx' ssy']))))
+    ([[cx cy mx my ssx ssy]]
+     (let [cx' (dec cx) cy' (dec cy)]
+       (when (and (pos? cx') (pos? cy'))
+         (t/t-test {:mean mx :sd (sqrt (/ ssx cx')) :n cx}
+                   {:mean my :sd (sqrt (/ ssy cy')) :n cy}
+                   opts))))))
+
 (defn simple-z-test
   "Performs a simple z test against a specified population mean
   and standard deviation. The standard deviation is optional,
