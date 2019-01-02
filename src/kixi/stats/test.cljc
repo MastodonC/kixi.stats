@@ -77,20 +77,19 @@
       (hypothesis-test z (d/normal {:mu 0.0 :sd 1.0})))))
 
 (defn t-test
-  "Calculates the t-test of statistical significance between two sample means.
+  "Calculates Welch's unequal variances t-test of statistical significance.
   Requires the mean, sd and sample size (n) of both samples.
   See also: kixi.stats.core/t-test"
   [{mean-a :mean sd-a :sd n-a :n}
    {mean-b :mean sd-b :sd n-b :n}]
-  (let [c-ab (+ n-a n-b)]
-    (when-let [sd-ab (and (pos? n-a) (pos? n-b)
-                          (sqrt (+ (/ (sq sd-a) n-a)
-                                   (/ (sq sd-b) n-b))))]
-      (let [dof (+ n-a n-b -2)
-            t (and (pos? sd-ab)
-                   (double (/ (- mean-a mean-b) sd-ab)))]
-        (when (and t (pos? dof))
-          (hypothesis-test t (d/t dof)))))))
+  (let [sd-ab (+ (/ (sq sd-a) n-a)
+                 (/ (sq sd-b) n-b))
+        t (/ (- mean-a mean-b)
+             (sqrt sd-ab))
+        dof (/ (sq sd-ab)
+               (+ (/ (pow sd-a 4) (* n-a n-a (dec n-a)))
+                  (/ (pow sd-b 4) (* n-b n-b (dec n-b)))))]
+    (hypothesis-test t (d/t dof))))
  
 (defn simple-t-test
   "Calculates the t-test of statistical significance for a sample mean.

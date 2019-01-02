@@ -4,7 +4,7 @@
             [kixi.stats.core :as kixi]
             [kixi.stats.estimate :as estimate]
             [kixi.stats.test :refer [simple-z-test z-test p-value]]
-            [kixi.stats.test-helpers :as t :refer [=ish numeric]]
+            [kixi.stats.test-helpers :as t :refer [=ish approx= numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
             [kixi.stats.protocols :as p]
             #?@(:cljs
@@ -629,6 +629,15 @@
                                     :sd (if y-var (sqrt y-var) 0)
                                     :n (count ys)})
                            alternate)))))))
+
+(deftest t-test-test
+  ;; Example 2 from https://en.wikipedia.org/wiki/Welch%27s_t-test
+  (let [samples (concat (map (partial hash-map :a) [17.2 20.9 22.6 18.1 21.7 21.4 23.5 24.2 14.7 21.8])
+                        (map (partial hash-map :b) [21.5 22.8 21.0 23.0 21.6 23.6 22.5 20.7 23.4 21.8
+                                                    20.7 21.7 21.5 22.5 23.6 21.5 22.5 23.5 21.5 21.8]))
+        result (transduce identity (kixi/t-test :a :b) samples)
+        =ish (approx= 1e-6)]
+    (is (=ish (p-value result) 0.1488416))))
 
 (deftest min-test
   (is (= 1.0 (transduce identity kixi/min [2 1 nil 5 3 ])))

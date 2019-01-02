@@ -584,7 +584,6 @@
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which
   returns a number, performs the t test of mean significance of those functions over
   inputs.
-
   Ignores only inputs where both `(fx input)` and `(fy input)` are nil."
   [fx fy]
   (fn

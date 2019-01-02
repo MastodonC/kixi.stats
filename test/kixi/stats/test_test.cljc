@@ -31,7 +31,7 @@
 
 (deftest t-test-test
   (is (=ish (sut/p-value (sut/t-test {:mean 28 :sd 14.1 :n 75} {:mean 33 :sd 9.5 :n 50}) :<>)
-            0.01940896286137318)))
+            0.019409259933322962)))
 
 (deftest simple-z-test-test
   (let [p 0.0067167326028858]
