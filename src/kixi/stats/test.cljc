@@ -8,20 +8,22 @@
 
 (defn significant?
   ([^HypothesisTest {:keys [statistic distribution alternate] :as test} alpha]
-   (let [critical (d/critical-value distribution alpha alternate)]
-     (case alternate
-       :<> (> (abs statistic) critical)
-       :<  (< statistic critical)
-       :>  (> statistic critical))))
+   (when (and statistic distribution alternate alpha)
+     (let [critical (d/critical-value distribution alpha alternate)]
+       (case alternate
+         :<> (> (abs statistic) critical)
+         :<  (< statistic critical)
+         :>  (> statistic critical)))))
   ([^HypothesisTest test alpha alternate]
    (significant? (assoc test :alternate alternate) alpha)))
 
 (defn p-value
   ([^HypothesisTest {:keys [statistic distribution alternate]}]
-   (case alternate
-     :<> (clamp (* 2 (d/cdf distribution (- (abs statistic)))) 0.0 1.0)
-     :<  (d/cdf distribution statistic)
-     :>  (- 1 (d/cdf distribution statistic))))
+   (when (and statistic distribution alternate)
+     (case alternate
+       :<> (clamp (* 2 (d/cdf distribution (- (abs statistic)))) 0.0 1.0)
+       :<  (d/cdf distribution statistic)
+       :>  (- 1 (d/cdf distribution statistic)))))
   ([^HypothesisTest test alternate]
    (p-value (assoc test :alternate alternate))))
 
@@ -57,8 +59,9 @@
   n: the sample size
   See also: kixi.stats.core/simple-z-test"
   [{:keys [mu sd]} {:keys [mean n]}]
-  (let [z (double (/ (- mean mu) (/ sd (sqrt n))))]
-    (hypothesis-test z (d/normal {:mu 0.0 :sd 1.0}))))
+  (when (and (pos? n) (pos? sd))
+    (let [z (double (/ (- mean mu) (/ sd (sqrt n))))]
+      (hypothesis-test z (d/normal {:mu 0.0 :sd 1.0})))))
 
 (defn z-test
   "Calculates the z-test of statistical significance between two sample means.
@@ -86,7 +89,6 @@
       (let [dof (+ n-a n-b -2)
             t (and (pos? sd-ab)
                    (double (/ (- mean-a mean-b) sd-ab)))]
-        (println dof)
         (when (and t (pos? dof))
           (hypothesis-test t (d/t dof)))))))
  
