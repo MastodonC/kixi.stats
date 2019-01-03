@@ -20,9 +20,6 @@
 (defprotocol PDiscreteRandomVariable
   (sample-frequencies [this n rng]))
 
-(defprotocol PHypothesisTest2
-  (significant [this alpha opts] "Returns whether the test is significant for the given alpha"))
-
 (defprotocol PInterval
   (lower [this] "Returns the lower bound")
   (upper [this] "Returns the upper bound"))
