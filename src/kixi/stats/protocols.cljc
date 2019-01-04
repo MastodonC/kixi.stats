@@ -20,6 +20,10 @@
 (defprotocol PDiscreteRandomVariable
   (sample-frequencies [this n rng]))
 
+(defprotocol PTestResult
+  (p-value [this] [this alternative] "The p-value associated with this test result")
+  (significant? [this alpha] [this alpha alternative] "Whether the result is significant at the given alpha"))
+
 (defprotocol PInterval
   (lower [this] "Returns the lower bound")
   (upper [this] "Returns the upper bound"))

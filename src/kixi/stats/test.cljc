@@ -4,28 +4,28 @@
             [kixi.stats.protocols :as p]
             [clojure.math.combinatorics :refer [cartesian-product]]))
 
-(defrecord TestResult [statistic distribution alternate])
+(def p-value p/p-value)
+(def significant? p/significant?)
 
-(defn significant?
-  ([^TestResult {:keys [statistic distribution alternate] :as test} alpha]
-   (when (and statistic distribution alternate alpha)
-     (let [critical (d/critical-value distribution alpha alternate)]
-       (case alternate
-         :<> (> (abs statistic) critical)
-         :<  (< statistic critical)
-         :>  (> statistic critical)))))
-  ([^TestResult test alpha alternate]
-   (significant? (assoc test :alternate alternate) alpha)))
-
-(defn p-value
-  ([^TestResult {:keys [statistic distribution alternate]}]
-   (when (and statistic distribution alternate)
-     (case alternate
-       :<> (clamp (* 2 (d/cdf distribution (- (abs statistic)))) 0.0 1.0)
-       :<  (d/cdf distribution statistic)
-       :>  (- 1 (d/cdf distribution statistic)))))
-  ([^TestResult test alternate]
-   (p-value (assoc test :alternate alternate))))
+(defrecord TestResult [statistic distribution h1]
+  p/PTestResult
+  (p-value [this]
+    (p-value this h1))
+  (p-value [this alternate]
+    (when (and statistic distribution alternate)
+      (case alternate
+        :<> (clamp (* 2 (d/cdf distribution (- (abs statistic)))) 0.0 1.0)
+        :<  (d/cdf distribution statistic)
+        :>  (- 1 (d/cdf distribution statistic)))))
+  (significant? [this alpha]
+    (significant? [this alpha h1]))
+  (significant? [this alpha alternate]
+    (when (and statistic distribution alpha alternate)
+      (let [critical (d/critical-value distribution alpha alternate)]
+        (case alternate
+          :<> (> (abs statistic) critical)
+          :<  (< statistic critical)
+          :>  (> statistic critical))))))
 
 (defn test-result
   ([statistic distribution]
