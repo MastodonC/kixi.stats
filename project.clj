@@ -1,4 +1,4 @@
-(defproject kixi/stats "0.4.4"
+(defproject kixi/stats "0.5.0"
   :description "A library of statistical distribution sampling and transducing functions"
   :url "https://github.com/mastodonc/kixi.stats"
   :license {:name "Eclipse Public License"
@@ -8,13 +8,10 @@
                  [org.clojure/math.combinatorics "0.1.4"]
                  [com.tdunning/t-digest "3.2"]]
   :profiles {:dev
-             {:dependencies [[org.clojure/clojure "1.8.0"]
-                             [org.clojure/clojurescript "1.10.339"]]
+             {:dependencies [[org.clojure/clojure "1.10.0"]
+                             [org.clojure/clojurescript "1.10.439"]]
               :plugins [[lein-cljsbuild "1.1.3"]
-                        [lein-codox "0.10.3"]
-                        [lein-doo "0.1.10"]]}}
-  :codox {:project {:name "kixi.stats"}
-          :source-uri "https://github.com/MastodonC/kixi.stats/blob/v0.4.4/{filepath}#L{line}"}
+                        [lein-doo "0.1.11"]]}}
   :cljsbuild
   {:builds
    {:test {:source-paths ["src" "test"]

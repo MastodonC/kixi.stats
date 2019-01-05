@@ -18,7 +18,7 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Multinomial
 * Normal
 * Poisson
-* Student's T
+* Student's t
 * Uniform
 * Weibull
 
@@ -26,6 +26,8 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 
 * Simple Z-test (one-sample location test)
 * Two-sample Z-test
+* Welch's unequal variances t-test
+* Simple t-test
 * Chi-squared test of categorical independence
 
 **Available transducing functions:**
@@ -55,7 +57,8 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Standard error of the mean
 * Standard error of the estimate
 * Standard error of the prediction
-* Simple Z-test & Two-sample Z-test
+* Simple Z-test & two-sample Z-test
+* Simple t-test and two-sample t-test
 * Chi-squared test
 
 Variance, covariance, standard deviation, skewness and kurtosis each have sample and population variants.
@@ -71,7 +74,7 @@ Examples of `kixi.stats` usage can be seen between 10:20-16:00 of this video on 
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.4.4"]
+[kixi/stats "0.5.0"]
 ```
 
 ## Usage
