@@ -1,8 +1,37 @@
 (ns kixi.stats.test
   (:require [kixi.stats.distribution :as d]
-            [kixi.stats.math :refer [abs erf pow sq sqrt lower-regularized-gamma]]
+            [kixi.stats.math :refer [abs clamp pow sq sqrt]]
             [kixi.stats.protocols :as p]
             [clojure.math.combinatorics :refer [cartesian-product]]))
+
+(def p-value p/p-value)
+(def significant? p/significant?)
+
+(defrecord TestResult [statistic distribution h1]
+  p/PTestResult
+  (p-value [this]
+    (p-value this h1))
+  (p-value [this alternate]
+    (when (and statistic distribution alternate)
+      (case alternate
+        :<> (clamp (* 2 (d/cdf distribution (- (abs statistic)))) 0.0 1.0)
+        :<  (d/cdf distribution statistic)
+        :>  (- 1 (d/cdf distribution statistic)))))
+  (significant? [this alpha]
+    (significant? [this alpha h1]))
+  (significant? [this alpha alternate]
+    (when (and statistic distribution alpha alternate)
+      (let [critical (d/critical-value distribution alpha alternate)]
+        (case alternate
+          :<> (> (abs statistic) critical)
+          :<  (< statistic critical)
+          :>  (> statistic critical))))))
+
+(defn test-result
+  ([statistic distribution]
+   (test-result statistic distribution :<>))
+  ([statistic distribution alternate]
+   (->TestResult statistic distribution alternate)))
 
 (defn chi-squared-test
   "Calculates the X^2 test of independence for a given contingency table.
@@ -20,23 +49,7 @@
                                   e (/ (apply * counts) total)]
                               (+ acc (/ (sq (- e cell)) e))))
                           0))]
-    {:p-value (- 1 (lower-regularized-gamma (/ dof 2.0) (/ stat 2.0)))
-     :X-sq (double stat)
-     :dof dof}))
-
-(defn z-table
-  [z & [{:keys [tails] :or {tails :both}}]]
-  (case tails
-    :lower (* 0.5 (+ 1 (erf (/ z (sqrt 2)))))
-    :upper (- 1 (* 0.5 (+ 1 (erf (/ z (sqrt 2))))))
-    :both (+ 1 (erf (/ z (sqrt 2))))))
-
-(defn critical-t
-  [dof alpha & [{:keys [tails] :or {tails :both}}]]
-  (case tails
-    :lower (- (d/quantile-t dof (- 1 alpha)))
-    :upper (d/quantile-t dof (- 1 alpha))
-    :both (d/quantile-t dof (- 1 (* 0.5 alpha)))))
+    (test-result stat (d/chi-squared dof) :>)))
 
 (defn simple-z-test
   "Calculates the z-test of statistical significance for a sample mean.
@@ -44,25 +57,57 @@
   sd: the population standard deviation
   mean: the sample mean
   n: the sample size
-  opts: tails: (optional) must be one of :lower, :upper, or :both (default).
   See also: kixi.stats.core/simple-z-test"
-  [{:keys [mu sd]} {:keys [mean n]} & [opts]]
-  (when-let [z (and (pos? sd)
-                    (double (/ (- mean mu)
-                               (/ sd (sqrt n)))))]
-    {:p-value (z-table z opts)}))
+  [{:keys [mu sd]} {:keys [mean n]}]
+  (when (and (pos? n) (pos? sd))
+    (let [z (double (/ (- mean mu) (/ sd (sqrt n))))]
+      (test-result z (d/normal {:mu 0.0 :sd 1.0})))))
 
 (defn z-test
   "Calculates the z-test of statistical significance between two sample means.
   Requires the mean, sd and sample size (n) of both samples.
-  opts: tails: (optional) must be one of :lower, :upper, or :both (default).
   See also: kixi.stats.core/z-test"
   [{mean-x :mean sd-x :sd n-x :n}
-   {mean-y :mean sd-y :sd n-y :n}
-   & [opts]]
-  (when-let [sd-xy (and (pos? n-x) (pos? n-y)
-                        (sqrt (+ (/ (sq sd-x) n-x)
-                                 (/ (sq sd-y) n-y))))]
-    (when-let [z (and (pos? sd-xy)
-                      (double (/ (- mean-x mean-y) sd-xy)))]
-      {:p-value (z-table z opts)})))
+   {mean-y :mean sd-y :sd n-y :n}]
+  (let [sd-xy (and (pos? n-x) (pos? n-y)
+                   (sqrt (+ (/ (sq sd-x) n-x)
+                            (/ (sq sd-y) n-y))))
+        z (and sd-xy
+               (pos? sd-xy)
+               (double (/ (- mean-x mean-y) sd-xy)))]
+    (when z
+      (test-result z (d/normal {:mu 0.0 :sd 1.0})))))
+
+(defn t-test
+  "Calculates Welch's unequal variances t-test of statistical significance.
+  Requires the mean, sd and sample size (n) of both samples.
+  See also: kixi.stats.core/t-test"
+  [{mean-a :mean sd-a :sd n-a :n}
+   {mean-b :mean sd-b :sd n-b :n}]
+  (let [sd-ab (and (pos? n-a) (pos? n-b)
+                   (+ (/ (sq sd-a) n-a)
+                      (/ (sq sd-b) n-b)))
+        t (and sd-ab
+               (/ (- mean-a mean-b)
+                  (sqrt sd-ab)))
+        dof (and (> n-a 1) (> n-b 1)
+                 (/ (sq sd-ab)
+                    (+ (/ (pow sd-a 4) (* n-a n-a (dec n-a)))
+                       (/ (pow sd-b 4) (* n-b n-b (dec n-b))))))]
+    (when (and t dof)
+      (test-result t (d/t dof)))))
+ 
+(defn simple-t-test
+  "Calculates the t-test of statistical significance for a sample mean.
+  mu: the population mean
+  sd: the population standard deviation
+  mean: the sample mean
+  n: the sample size
+  See also: kixi.stats.core/simple-t-test"
+  [{:keys [mu sd]} {:keys [mean n]}]
+  (let [dof (dec n)
+        t (and (pos? sd) (pos? n)
+               (double (/ (- mean mu)
+                          (/ sd (sqrt n)))))]
+    (when (and t (pos? dof))
+      (test-result t (d/t dof)))))

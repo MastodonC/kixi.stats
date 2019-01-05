@@ -3,8 +3,8 @@
             [clojure.test.check.generators :as gen]
             [kixi.stats.core :as kixi]
             [kixi.stats.estimate :as estimate]
-            [kixi.stats.test :refer [simple-z-test z-test]]
-            [kixi.stats.test-helpers :as t :refer [=ish numeric]]
+            [kixi.stats.test :refer [simple-z-test z-test p-value]]
+            [kixi.stats.test-helpers :as t :refer [=ish approx= numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
             [kixi.stats.protocols :as p]
             #?@(:cljs
@@ -588,48 +588,60 @@
                    (repeat 4 {:v1 :a :v2 :y})
                    (repeat 6 {:v1 :b :v2 :x})
                    (repeat 8 {:v1 :b :v2 :y}))]
-    (is (=ish (transduce identity (kixi/chi-squared-test :v1 :v2) xs)
-              {:p-value 0.6903283294641935, :X-sq 0.1587301587301587, :dof 1}))))
+    (is (=ish (p-value (transduce identity (kixi/chi-squared-test :v1 :v2) xs))
+              0.6903283294641935))))
 
 (defspec simple-z-test-plugin-spec
   test-opts
   (for-all [coll (gen/vector gen/int 2 100)
-            opts (gen/elements [{} {:tails :lower} {:tails :upper}])
+            alternate (gen/elements [:<> :> :<])
             x gen/int]
-           (is (=ish (transduce identity (kixi/simple-z-test {:mu x} opts) coll)
-                     (simple-z-test {:mu x :sd (sqrt (variance' coll))}
-                                    {:mean (mean' coll) :n (count coll)}
-                                    opts)))))
+    (is (=ish (some-> (transduce identity (kixi/simple-z-test {:mu x}) coll)
+                      (p-value alternate))
+              (some-> (simple-z-test {:mu x :sd (sqrt (variance' coll))}
+                                     {:mean (mean' coll) :n (count coll)})
+                      (p-value alternate))))))
 
 (defspec simple-z-test-spec
   test-opts
   (for-all [coll (gen/vector gen/int 2 100)
-            opts (gen/elements [{} {:tails :lower} {:tails :upper}])
+            alternate (gen/elements [:<> :> :<])
             sd gen/pos-int
             x gen/int]
-           (is (=ish (transduce identity (kixi/simple-z-test {:mu x :sd sd} opts) coll)
-                     (simple-z-test {:mu x :sd sd}
-                                    {:mean (mean' coll) :n (count coll)}
-                                    opts)))))
+    (is (=ish (some-> (transduce identity (kixi/simple-z-test {:mu x :sd sd}) coll)
+                      (p-value alternate))
+              (some-> (simple-z-test {:mu x :sd sd}
+                                     {:mean (mean' coll) :n (count coll)})
+                      (p-value alternate))))))
 
 (defspec z-test-test
   test-opts
   (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
-            opts (gen/elements [{} {:tails :lower} {:tails :upper}])]
-           (is (=ish (transduce identity (kixi/z-test :x :y opts) coll)
-                     (let [xs (keep identity (map :x coll))
-                           x-var (variance' xs)
-                           ys (keep identity (map :y coll))
-                           y-var (variance' ys)]
-                       (when (and (> (count xs) 1)
-                                  (> (count ys) 1))
-                         (z-test {:mean (mean' xs)
-                                  :sd (if x-var (sqrt x-var) 0)
-                                  :n (count xs)}
-                                 {:mean (mean' ys)
-                                  :sd (if y-var (sqrt y-var) 0)
-                                  :n (count ys)}
-                                 opts)))))))
+            alternate (gen/elements [:<> :> :<])]
+    (is (=ish (some-> (transduce identity (kixi/z-test :x :y) coll)
+                      (p-value alternate))
+              (let [xs (keep identity (map :x coll))
+                    x-var (variance' xs)
+                    ys (keep identity (map :y coll))
+                    y-var (variance' ys)]
+                (when (and (> (count xs) 1)
+                           (> (count ys) 1))
+                  (some-> (z-test {:mean (mean' xs)
+                                   :sd (if x-var (sqrt x-var) 0)
+                                   :n (count xs)}
+                                  {:mean (mean' ys)
+                                   :sd (if y-var (sqrt y-var) 0)
+                                   :n (count ys)})
+                          (p-value alternate))))))))
+
+(deftest t-test-test
+  ;; Example 2 from https://en.wikipedia.org/wiki/Welch%27s_t-test
+  (let [samples (concat (map (partial hash-map :a) [17.2 20.9 22.6 18.1 21.7 21.4 23.5 24.2 14.7 21.8])
+                        (map (partial hash-map :b) [21.5 22.8 21.0 23.0 21.6 23.6 22.5 20.7 23.4 21.8
+                                                    20.7 21.7 21.5 22.5 23.6 21.5 22.5 23.5 21.5 21.8]))
+        result (transduce identity (kixi/t-test :a :b) samples)
+        =ish (approx= 1e-6)]
+    (is (=ish (p-value result) 0.1488416))))
 
 (deftest min-test
   (is (= 1.0 (transduce identity kixi/min [2 1 nil 5 3 ])))

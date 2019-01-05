@@ -1,7 +1,7 @@
 (ns kixi.stats.estimate
-  (:require [kixi.stats.math :refer [sq sqrt]]
-            [kixi.stats.protocols :as p]
-            [kixi.stats.test :as t]))
+  (:require [kixi.stats.distribution :as d]
+            [kixi.stats.math :refer [sq sqrt]]
+            [kixi.stats.protocols :as p]))
 
 (defn simple-linear-regression
   [{:keys [x-bar y-bar ss-x ss-xy] :as sum-squares}]
@@ -30,7 +30,7 @@
         y-hat (p/measure regression x)
         se (regression-standard-error sum-squares x)
         df (dec n)
-        t-crit (t/critical-t df alpha)
+        t-crit (d/critical-value (d/t df) alpha)
         err (* t-crit se)]
     (reify p/PInterval
       (lower [_] (- y-hat err))
@@ -50,7 +50,7 @@
         y-hat (p/measure regression x)
         se (regression-prediction-standard-error sum-squares x)
         df (dec n)
-        t-crit (t/critical-t df alpha)
+        t-crit (d/critical-value (d/t df) alpha)
         err (* t-crit se)]
     (reify p/PInterval
       (lower [_] (- y-hat err))

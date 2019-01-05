@@ -39,6 +39,9 @@
   #?(:clj  (Math/cos x)
      :cljs (js/Math.cos x)))
 
+(defn clamp [x lower upper]
+  (min (max x lower) upper))
+
 (defn sin [x]
   #?(:clj  (Math/sin x)
      :cljs (js/Math.sin x)))
@@ -226,6 +229,43 @@
               (recur (inc i) b c d h)
               (- 1 (* h (exp (- (* a (log x)) x (log-gamma a))))))))))))
 
+(defn gamma-pinv
+  "Returns the inverse of the lower regularized inomplete gamma function"
+  [p a]
+  (cond
+    (>= p 1.0) (max 100.0 (+ a (* 100.0 (sqrt a))))
+    (<= p 0.0) 0.0
+    :else
+    (let [gln (log-gamma a)
+          a1 (dec a)
+          lna1 (log a1)
+          afac (exp (- (* a1 (dec lna1)) gln))
+          EPS 1e-8
+          x (if (> a 1)
+              (let [pp (if (< p 0.5) p (- 1 p))
+                    t (sqrt (* -2 (log pp)))
+                    x (- (/ (+ 2.30753 (* 0.27061 t)) (+ 1 (* t (+ 0.99229 (* 0.04481 t))))) t)
+                    x (if (< p 0.5) (- x) x)]
+                (max 1e-3 (* a (pow (- 1 (/ 1 (* 9 a)) (/ x (* 3 (sqrt a)))) 3))))
+              (let [t (- 1 (* a (+ 0.253 (* 0.12 a))))]
+                (if (< p t)
+                  (pow (/ p t) (/ 1 a))
+                  (- 1 (log (- 1 (/ (- p t) (- 1 t))))))))]
+      (loop [j 0 x x]
+        (if (<= x 0.0)
+          0.0
+          (let [err (- (lower-regularized-gamma a x) p)
+                t (if (> a 1)
+                    (* afac (exp (- (* a1 (- (log x) lna1)) (- x a1))))
+                    (exp (- (* a1 (log x)) gln x)))
+                u (/ err t)
+                t (/ u (- 1 (* 0.5 (min 1 (* u (/ (dec a) (dec x)))))))
+                x (- x t)
+                x (if (<= x 0) (* 0.5 (+ x t)) x)]
+            (if (or (< (abs t) (* EPS x)) (= j 11))
+              x
+              (recur (inc j) x))))))))
+
 (defn log-beta
   "Computes the log of the beta function"
   [a b]
@@ -273,8 +313,8 @@
   "Returns the incomplete beta function I_x(a,b)"
   [x a b]
   (when (<= 0 x 1)
-    (let [bt (if (or (== a 1)
-                     (== b 1))
+    (let [bt (if (or (== x 0)
+                     (== x 1))
                0
                (exp (+ (- (log-gamma (+ a b))
                           (log-gamma a)

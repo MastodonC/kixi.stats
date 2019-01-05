@@ -218,6 +218,13 @@
         x (sqrt (* dof (/ (- 1 x) x)))]
     (if (> p 0.5) x (- x))))
 
+(defn ^:no-doc cdf-t
+  [dof x]
+  (let [dof2 (* dof 0.5)]
+    (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
+                (* 2 (sqrt (+ (sq x) dof))))
+             dof2 dof2))) 
+
 
 ;;;; Protocol implementations
 
@@ -228,7 +235,7 @@
       (+ (* (rand-double rng) (- b a)) a))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -240,7 +247,7 @@
       (/ (- (log (rand-double rng))) rate))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -256,7 +263,7 @@
     (sample-frequencies [this n' rng]
       (-> (sample-n this n' rng)
           (frequencies)))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -275,7 +282,7 @@
     (sample-frequencies [this n rng]
       (let [v (sample-1 (->Binomial n p) rng)]
         {true v false (- n v)}))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -293,7 +300,7 @@
                           (sqrt (* 2 sd sd)))))))
     (quantile [this p]
       (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -309,13 +316,10 @@
       (default-sample-n this n rng))
     p/PQuantile
     (cdf [this x]
-      (let [dof2 (* dof 0.5)]
-        (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
-                    (* 2 (sqrt (+ (sq x) dof))))
-                 dof2 dof2)))
+      (cdf-t dof x))
     (quantile [this p]
       (quantile-t dof p))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -327,7 +331,7 @@
       (* (rand-gamma shape rng) scale))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -339,7 +343,7 @@
       (rand-beta alpha beta rng))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -353,7 +357,7 @@
         (rand-binomial n p r2)))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -365,7 +369,12 @@
       (* (rand-gamma (/ k 2) rng) 2))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    p/PQuantile
+    (cdf [this x]
+      (m/lower-regularized-gamma (* 0.5 k) (* 0.5 x)))
+    (quantile [this p]
+      (* 2.0 (m/gamma-pinv p (* 0.5 k))))
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -380,7 +389,7 @@
         (/ (/ x1 d1) (/ x2 d2))))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -397,7 +406,7 @@
               k)))))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -411,7 +420,7 @@
          scale))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -436,7 +445,7 @@
                    (- rem p) (next-rng rng)
                    (rest ks) (rest ps)))
           (persistent! coll))))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -460,7 +469,7 @@
     p/PDiscreteRandomVariable
     (sample-frequencies [this n rng]
       (frequencies (sample-n this n rng)))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -475,7 +484,7 @@
         (mapv #(/ % s) xs)))
     (sample-n [this n rng]
       (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -492,7 +501,7 @@
     p/PDiscreteRandomVariable
     (sample-frequencies [this n rng]
       (frequencies (sample-n this n rng)))
-    #?@(:clj (clojure.lang.ISeq
+    #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
@@ -667,3 +676,14 @@
   ([n ^kixi.stats.protocols.PDiscreteRandomVariable distribution {:keys [seed]}]
    (let [rng (if seed (make-random seed) (make-random))]
      (sample-frequencies distribution n rng))))
+
+(defn critical-value
+  ([^kixi.stats.protocols.PQuantile distribution]
+   (critical-value distribution 0.05))
+  ([^kixi.stats.protocols.PQuantile distribution alpha]
+   (critical-value distribution alpha :<>))
+  ([^kixi.stats.protocols.PQuantile distribution alpha tails]
+   (case tails
+     :<> (quantile distribution (- 1 (* 0.5 alpha)))
+     :<  (quantile distribution alpha)
+     :>  (quantile distribution (- 1 alpha)))))
