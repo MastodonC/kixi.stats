@@ -69,11 +69,13 @@
   See also: kixi.stats.core/z-test"
   [{mean-x :mean sd-x :sd n-x :n}
    {mean-y :mean sd-y :sd n-y :n}]
-  (when-let [sd-xy (and (pos? n-x) (pos? n-y)
-                        (sqrt (+ (/ (sq sd-x) n-x)
-                                 (/ (sq sd-y) n-y))))]
-    (when-let [z (and (pos? sd-xy)
-                      (double (/ (- mean-x mean-y) sd-xy)))]
+  (let [sd-xy (and (pos? n-x) (pos? n-y)
+                   (sqrt (+ (/ (sq sd-x) n-x)
+                            (/ (sq sd-y) n-y))))
+        z (and sd-xy
+               (pos? sd-xy)
+               (double (/ (- mean-x mean-y) sd-xy)))]
+    (when z
       (test-result z (d/normal {:mu 0.0 :sd 1.0})))))
 
 (defn t-test
@@ -82,14 +84,18 @@
   See also: kixi.stats.core/t-test"
   [{mean-a :mean sd-a :sd n-a :n}
    {mean-b :mean sd-b :sd n-b :n}]
-  (let [sd-ab (+ (/ (sq sd-a) n-a)
-                 (/ (sq sd-b) n-b))
-        t (/ (- mean-a mean-b)
-             (sqrt sd-ab))
-        dof (/ (sq sd-ab)
-               (+ (/ (pow sd-a 4) (* n-a n-a (dec n-a)))
-                  (/ (pow sd-b 4) (* n-b n-b (dec n-b)))))]
-    (test-result t (d/t dof))))
+  (let [sd-ab (and (pos? n-a) (pos? n-b)
+                   (+ (/ (sq sd-a) n-a)
+                      (/ (sq sd-b) n-b)))
+        t (and sd-ab
+               (/ (- mean-a mean-b)
+                  (sqrt sd-ab)))
+        dof (and (> n-a 1) (> n-b 1)
+                 (/ (sq sd-ab)
+                    (+ (/ (pow sd-a 4) (* n-a n-a (dec n-a)))
+                       (/ (pow sd-b 4) (* n-b n-b (dec n-b))))))]
+    (when (and t dof)
+      (test-result t (d/t dof)))))
  
 (defn simple-t-test
   "Calculates the t-test of statistical significance for a sample mean.
@@ -100,7 +106,7 @@
   See also: kixi.stats.core/simple-t-test"
   [{:keys [mu sd]} {:keys [mean n]}]
   (let [dof (dec n)
-        t (and (pos? sd)
+        t (and (pos? sd) (pos? n)
                (double (/ (- mean mu)
                           (/ sd (sqrt n)))))]
     (when (and t (pos? dof))
