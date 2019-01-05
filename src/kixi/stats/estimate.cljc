@@ -29,7 +29,7 @@
   (let [regression (simple-linear-regression sum-squares)
         y-hat (p/measure regression x)
         se (regression-standard-error sum-squares x)
-        df (dec n)
+        df (- n 2)
         t-crit (d/critical-value (d/t df) alpha)
         err (* t-crit se)]
     (reify p/PInterval
@@ -49,7 +49,7 @@
   (let [regression (simple-linear-regression sum-squares)
         y-hat (p/measure regression x)
         se (regression-prediction-standard-error sum-squares x)
-        df (dec n)
+        df (- n 2)
         t-crit (d/critical-value (d/t df) alpha)
         err (* t-crit se)]
     (reify p/PInterval
