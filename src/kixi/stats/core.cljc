@@ -130,8 +130,8 @@
 (def variance-s
   "Estimates an unbiased variance of numeric inputs."
   (fn
-    ([] [0.0 0.0 0.0])
-    ([[^double c ^double m ^double ss :as acc] e]
+    ([] [0 0.0 0.0])
+    ([[^long c ^double m ^double ss :as acc] e]
      (if (nil? e)
        acc
        (let [e  (double e)
