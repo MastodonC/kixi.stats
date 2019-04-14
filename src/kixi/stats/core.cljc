@@ -85,8 +85,8 @@
 (def arithmetic-mean
   "Calculates the arithmetic mean of numeric inputs."
   (fn
-    ([] [0.0 0.0])
-    ([[^double s ^double c :as acc] e]
+    ([] [0.0 0])
+    ([[^double s ^long c :as acc] e]
      (if (nil? e)
        acc
        (let [e (double e)]
