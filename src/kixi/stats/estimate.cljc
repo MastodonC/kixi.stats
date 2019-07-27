@@ -30,7 +30,7 @@
         y-hat (p/measure regression x)
         se (regression-standard-error sum-squares x)
         df (- n 2)
-        t-crit (d/critical-value (d/t df) alpha)
+        t-crit (d/critical-value (d/t {:v df}) alpha)
         err (* t-crit se)]
     (reify p/PInterval
       (lower [_] (- y-hat err))
@@ -50,7 +50,7 @@
         y-hat (p/measure regression x)
         se (regression-prediction-standard-error sum-squares x)
         df (- n 2)
-        t-crit (d/critical-value (d/t df) alpha)
+        t-crit (d/critical-value (d/t {:v df}) alpha)
         err (* t-crit se)]
     (reify p/PInterval
       (lower [_] (- y-hat err))

@@ -49,7 +49,7 @@
                                   e (/ (apply * counts) total)]
                               (+ acc (/ (sq (- e cell)) e))))
                           0))]
-    (test-result stat (d/chi-squared dof) :>)))
+    (test-result stat (d/chi-squared {:k dof}) :>)))
 
 (defn simple-z-test
   "Calculates the z-test of statistical significance for a sample mean.
@@ -61,7 +61,7 @@
   [{:keys [mu sd]} {:keys [mean n]}]
   (when (and (pos? n) (pos? sd))
     (let [z (double (/ (- mean mu) (/ sd (sqrt n))))]
-      (test-result z (d/normal {:mu 0.0 :sd 1.0})))))
+      (test-result z (d/normal {:location 0.0 :scale 1.0})))))
 
 (defn z-test
   "Calculates the z-test of statistical significance between two sample means.
@@ -76,7 +76,7 @@
                (pos? sd-xy)
                (double (/ (- mean-x mean-y) sd-xy)))]
     (when z
-      (test-result z (d/normal {:mu 0.0 :sd 1.0})))))
+      (test-result z (d/normal {:location 0.0 :scale 1.0})))))
 
 (defn t-test
   "Calculates Welch's unequal variances t-test of statistical significance.
@@ -95,7 +95,7 @@
                     (+ (/ (pow sd-a 4) (* n-a n-a (dec n-a)))
                        (/ (pow sd-b 4) (* n-b n-b (dec n-b))))))]
     (when (and t dof)
-      (test-result t (d/t dof)))))
+      (test-result t (d/t {:v dof})))))
  
 (defn simple-t-test
   "Calculates the t-test of statistical significance for a sample mean.
@@ -110,4 +110,4 @@
                (double (/ (- mean mu)
                           (/ sd (sqrt n)))))]
     (when (and t (pos? dof))
-      (test-result t (d/t dof)))))
+      (test-result t (d/t {:v dof})))))

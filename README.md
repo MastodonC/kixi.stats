@@ -231,7 +231,7 @@ The Bernoulli, binomial and categorical distributions are discrete, so samples c
 ```clojure
 (require '[kixi.stats.distribution :refer [sample-summary bernoulli]])
 
-(sample-summary 1000 (bernoulli 0.3))
+(sample-summary 1000 (bernoulli {:p 0.3}))
 
 ;;=> {true 296, false 704}
 ```
@@ -245,11 +245,11 @@ The sampling functions `draw`, `sample` and `sample-summary` are all designed to
 ```clojure
 (require '[kixi.stats.distribution :refer [uniform]])
 
-(draw (uniform 0 1) {:seed 42})
+(draw (uniform {:a 0 :b 1}) {:seed 42})
 
 ;;=> 0.7415648787718233
 
-(draw (uniform 0 1) {:seed 42})
+(draw (uniform {:a 0 :b 1}) {:seed 42})
 
 ;;=> 0.7415648787718233
 ```

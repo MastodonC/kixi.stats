@@ -543,20 +543,20 @@
 
 (defn uniform
   "Returns a uniform distribution.
-  Params: a ∈ ℝ, b ∈ ℝ"
-  [a b]
+  Params: {:a ∈ ℝ, :b ∈ ℝ}"
+  [{:keys [a b]}]
   (->Uniform a b))
 
 (defn exponential
   "Returns an exponential distribution.
-  Params: rate ∈ ℝ > 0"
-  [rate]
+  Params: {:rate ∈ ℝ > 0}"
+  [{:keys [rate]}]
   (->Exponential rate))
 
 (defn bernoulli
   "Returns a Bernoulli distribution.
-  Params: p ∈ [0 1]"
-  [p]
+  Params: {:p ∈ [0 1]}"
+  [{:keys [p]}]
   (->Bernoulli p))
 
 (defn binomial
@@ -567,15 +567,15 @@
 
 (defn normal
   "Returns a normal distribution.
-  Params: {:mu ∈ ℝ, :sd ∈ ℝ}"
-  [{:keys [mu sd]}]
-  (->Normal mu sd))
+  Params: {:location ∈ ℝ, :scale ∈ ℝ}"
+  [{:keys [location scale mu sd]}]
+  (->Normal (or location mu) (or scale sd)))
 
 (defn t
   "Returns a t distribution.
-  Params: dof ∈ ℕ > 0"
-  [dof]
-  (->T dof))
+  Params: {:v ∈ ℕ > 0}"
+  [{:keys [v]}]
+  (->T v))
 
 (defn gamma
   "Returns a gamma distribution.
@@ -591,8 +591,8 @@
 
 (defn beta-binomial
   "Returns a beta distribution.
-  Params: n ∈ ℕ, {:alpha ∈ ℝ, :beta ∈ ℝ}"
-  [n {:keys [alpha beta] :or {alpha 1.0 beta 1.0}}]
+  Params: {:n ∈ ℕ > 0, :alpha ∈ ℝ > 0, :beta ∈ ℝ > 0}"
+  [{:keys [n alpha beta] :or {alpha 1.0 beta 1.0}}]
   (->BetaBinomial n alpha beta))
 
 (defn weibull
@@ -603,50 +603,48 @@
 
 (defn chi-squared
   "Returns a chi-squared distribution.
-  Params: k ∈ ℕ > 0"
-  [k]
+  Params: {:k ∈ ℕ > 0}"
+  [{:keys [k]}]
   (->ChiSquared k))
 
 (defn f
   "Returns an F distribution.
-  Params: d1 ∈ ℕ > 0, d2 ∈ ℕ > 0"
-  [d1 d2]
+  Params: {:d1 ∈ ℕ > 0, :d2 ∈ ℕ > 0}"
+  [{:keys [d1 d2]}]
   (->F d1 d2))
 
 (defn poisson
   "Returns a Poisson distribution.
-  Params: lambda ∈ ℝ > 0"
-  [lambda]
+  Params: {:lambda ∈ ℝ > 0}"
+  [{:keys [lambda]}]
   (->Poisson lambda))
 
 (defn categorical
   "Returns a categorical distribution.
-  Params: [k1, ..., kn], [p1, ..., pn]
-  where k1...kn are the categories
-  and p1...pn are probabilities.
+  Params: {[category] [probability], ...}
   Probabilities should be >= 0 and sum to 1"
-  [ks ps]
-  (->Categorical ks ps))
+  [category-probs]
+  (let [[ks ps] (apply map vector kp)]
+    (->Categorical ks ps)))
 
 (defn multinomial
   "Returns a multinomial distribution.
-  Params: n ∈ ℕ > 0, [p1, ..., pn]
-  where p1...pn are probabilities.
+  Params: {:n ∈ ℕ > 0, :probs [ℝ >= 0, ...]}
   Probabilities should be >= 0 and sum to 1"
-  [n ps]
-  (->Multinomial n ps))
+  [{:keys [n probs]}]
+  (->Multinomial n probs))
 
 (defn dirichlet
   "Returns a Dirichlet distribution.
-  Params: [a1...an] ∈ ℝ >= 0"
-  [as]
-  (->Dirichlet as))
+  Params: {:alphas [ℝ >= 0, ...]}"
+  [{:keys [alphas]}]
+  (->Dirichlet alphas))
 
 (defn dirichlet-multinomial
   "Returns a Dirichlet-multinomial distribution.
-  Params: n ∈ ℕ, [a1...an] ∈ ℝ >= 0"
-  [n as]
-  (->DirichletMultinomial n as))
+  Params: {:n ∈ ℕ, :alphas [ℝ >= 0, ...]}"
+  [{:keys [n alphas]}]
+  (->DirichletMultinomial n alphas))
 
 (defn draw
   "Returns a single variate from the distribution.
