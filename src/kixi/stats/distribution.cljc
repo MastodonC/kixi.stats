@@ -579,9 +579,9 @@
 
 (defn gamma
   "Returns a gamma distribution.
-  Params: {:shape ∈ ℝ, :scale ∈ ℝ}"
-  [{:keys [shape scale] :or {shape 1.0 scale 1.0}}]
-  (->Gamma shape scale))
+  Params: {:shape ∈ ℝ, :scale ∈ ℝ} or {:shape ∈ ℝ, :rate ∈ ℝ}"
+  [{:keys [shape scale rate] :or {shape 1.0}}]
+  (->Gamma shape (or scale (/ 1.0 rate))))
 
 (defn beta
   "Returns a beta distribution.
