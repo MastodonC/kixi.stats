@@ -1,4 +1,4 @@
-## 0.5.1 (2019-07-27)
+## 0.5.1 (2019-07-30)
 
 * **BREAKING CHANGE** All distributions now expect named rather than positional args
 * The normal distribution can now be paramaterised with `:location` & `:scale` to align more closely with other distributions
