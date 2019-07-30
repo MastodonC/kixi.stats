@@ -74,7 +74,7 @@ Examples of `kixi.stats` usage can be seen between 10:20-16:00 of this video on 
 Add the following dependency:
 
 ```clojure
-[kixi/stats "0.5.0"]
+[kixi/stats "0.5.1"]
 ```
 
 ## Usage
