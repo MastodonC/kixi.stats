@@ -1,3 +1,9 @@
+## 0.5.1 (2019-07-30)
+
+* **BREAKING CHANGE** All distributions now expect named rather than positional args
+* The normal distribution can now be paramaterised with `:location` & `:scale` to align more closely with other distributions
+* The categorical distribution now expects a map of {category-name => probability}, rather than separate category and probability vectors
+
 ## 0.5.0 (2019-01-05)
 
 * **BREAKING CHANGE** Protocol I prefix is replaced with P

@@ -231,12 +231,12 @@ The Bernoulli, binomial and categorical distributions are discrete, so samples c
 ```clojure
 (require '[kixi.stats.distribution :refer [sample-summary bernoulli]])
 
-(sample-summary 1000 (bernoulli 0.3))
+(sample-summary 1000 (bernoulli {:p 0.3}))
 
 ;;=> {true 296, false 704}
 ```
 
-This is equivalent to `(frequencies (sample 1000 (bernoulli 0.3)))`, but where possible `sample-summary` uses optimisations to avoid reifying and aggregating a large intermediate sample, and should be preferred. When `sample-summary` doesn't return a value for a particular variate, that value should be assumed zero.
+This is equivalent to `(frequencies (sample 1000 (bernoulli {:p 0.3})))`, but where possible `sample-summary` uses optimisations to avoid reifying and aggregating a large intermediate sample, and should be preferred. When `sample-summary` doesn't return a value for a particular variate, that value should be assumed zero.
 
 **Deterministic sampling**
 
@@ -245,11 +245,11 @@ The sampling functions `draw`, `sample` and `sample-summary` are all designed to
 ```clojure
 (require '[kixi.stats.distribution :refer [uniform]])
 
-(draw (uniform 0 1) {:seed 42})
+(draw (uniform {:a 0 :b 1}) {:seed 42})
 
 ;;=> 0.7415648787718233
 
-(draw (uniform 0 1) {:seed 42})
+(draw (uniform {:a 0 :b 1}) {:seed 42})
 
 ;;=> 0.7415648787718233
 ```
