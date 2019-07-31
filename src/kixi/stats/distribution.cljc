@@ -624,7 +624,7 @@
   Params: {[category] [probability], ...}
   Probabilities should be >= 0 and sum to 1"
   [category-probs]
-  (let [[ks ps] (apply map vector kp)]
+  (let [[ks ps] (apply map vector category-probs)]
     (->Categorical ks ps)))
 
 (defn multinomial
