@@ -1,3 +1,7 @@
+## 0.5.2 (2019-07-31)
+
+* Fix compilation error in `kixi.stats.distribution`
+
 ## 0.5.1 (2019-07-30)
 
 * **BREAKING CHANGE** All distributions now expect named rather than positional args
