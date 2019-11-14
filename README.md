@@ -148,7 +148,7 @@ So long as `xform` is a stateless transducer, we can use it to create a new redu
 
 The `kixi.stats` API is focused primarily on statistical functions and doesn't need to be littered with exhaustive `count-when`-style specialisms. Combinators from libraries such as [redux](https://github.com/henrygarner/redux) and Clojure itself can be used to combine those functions in sophisticated ways.
 
-**Empricial distribution histograms**
+**Empirical distribution histograms**
 
 The Clojure version of `kixi.stats.core` contains reducing functions for calculating the median, interquartile range and 5-number summary using the [t-digest](https://github.com/tdunning/t-digest). They can be used like this:
 
