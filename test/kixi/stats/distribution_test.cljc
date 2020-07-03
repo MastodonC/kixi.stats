@@ -1,7 +1,7 @@
 (ns kixi.stats.distribution-test
   (:require [kixi.stats.distribution :as sut]
             [kixi.stats.core :as kixi]
-            [kixi.stats.math :refer [gamma log equal]]
+            [kixi.stats.math :refer [gamma exp log equal]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check]
             [kixi.stats.test-helpers :refer [=ish numeric cdf' quantile']]
@@ -126,10 +126,16 @@
            (sut/draw (sut/binomial {:n n :p p}) {:seed seed})))
     (is (= (sut/draw (sut/normal {:location a :scale b}) {:seed seed})
            (sut/draw (sut/normal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/draw (sut/lognormal {:location a :scale b}) {:seed seed})
+           (sut/draw (sut/lognormal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/draw (sut/cauchy {:location a :scale alpha}) {:seed seed})
+           (sut/draw (sut/cauchy {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/draw (sut/t {:v d}) {:seed seed})
            (sut/draw (sut/t {:v d}) {:seed seed})))
     (is (= (sut/draw (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})
            (sut/draw (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})))
+    (is (= (sut/draw (sut/pareto {:shape s :scale (/ 0.5 r)}) {:seed seed})
+           (sut/draw (sut/pareto {:shape s :scale (/ 0.5 r)}) {:seed seed})))
     (is (= (sut/draw (sut/beta {:alpha alpha :beta beta}) {:seed seed})
            (sut/draw (sut/beta {:alpha alpha :beta beta}) {:seed seed})))
     (is (= (sut/draw (sut/weibull {:shape alpha :scale beta}) {:seed seed})
@@ -167,10 +173,16 @@
            (sut/sample n (sut/binomial {:n n :p p}) {:seed seed})))
     (is (= (sut/sample n (sut/normal {:location a :scale b}) {:seed seed})
            (sut/sample n (sut/normal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/sample n (sut/lognormal {:location a :scale b}) {:seed seed})
+           (sut/sample n (sut/lognormal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/sample n (sut/cauchy {:location a :scale alpha}) {:seed seed})
+           (sut/sample n (sut/cauchy {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/sample n (sut/t {:v d}) {:seed seed})
            (sut/sample n (sut/t {:v d}) {:seed seed})))
     (is (= (sut/sample n (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})
            (sut/sample n (sut/gamma {:shape s :scale (/ 0.5 r)}) {:seed seed})))
+    (is (= (sut/sample n (sut/pareto {:shape s :scale (/ 0.5 r)}) {:seed seed})
+           (sut/sample n (sut/pareto {:shape s :scale (/ 0.5 r)}) {:seed seed})))
     (is (= (sut/sample n (sut/beta {:alpha alpha :beta beta}) {:seed seed})
            (sut/sample n (sut/beta {:alpha alpha :beta beta}) {:seed seed})))
     (is (= (sut/sample n (sut/weibull {:shape alpha :scale beta}) {:seed seed})
@@ -255,6 +267,10 @@
                             (sut/binomial {:n n :p p})))
     (is (converges-to-mean? a
                             (sut/normal {:location a :scale (/ 1 r)})))
+    (is (converges-to-mean? (exp (+ a (* 0.5 b b)))
+                            (sut/lognormal {:location a :scale b})))
+    (is (converges-to-mean? (/ (* s (+ (/ 1 r) 0.01)) (- s 1)) ; :scale > 1
+                            (sut/pareto {:shape s :scale (+ (/ 1 r) 0.01)})))
     (is (converges-to-mean? 0.0
                             (sut/t {:v d})))
     (is (converges-to-mean? (/ s r)
