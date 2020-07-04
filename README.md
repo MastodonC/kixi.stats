@@ -16,7 +16,7 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Exponential
 * F
 * Gamma
-* Lognormal
+* Log-normal
 * Multinomial
 * Normal
 * Pareto
@@ -292,6 +292,7 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
   * [Henry Garner](https://github.com/henrygarner)
   * [Simon Belak](https://github.com/sbelak)
   * [Elise Huard](https://github.com/elisehuard)
+  * [Dorab Patel](https://github.com/bombaywalla)
 
 ## License
 

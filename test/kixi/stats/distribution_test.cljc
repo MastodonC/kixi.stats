@@ -126,8 +126,8 @@
            (sut/draw (sut/binomial {:n n :p p}) {:seed seed})))
     (is (= (sut/draw (sut/normal {:location a :scale b}) {:seed seed})
            (sut/draw (sut/normal {:location a :scale b}) {:seed seed})))
-    (is (= (sut/draw (sut/lognormal {:location a :scale b}) {:seed seed})
-           (sut/draw (sut/lognormal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/draw (sut/log-normal {:location a :scale b}) {:seed seed})
+           (sut/draw (sut/log-normal {:location a :scale b}) {:seed seed})))
     (is (= (sut/draw (sut/cauchy {:location a :scale alpha}) {:seed seed})
            (sut/draw (sut/cauchy {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/draw (sut/t {:v d}) {:seed seed})
@@ -173,8 +173,8 @@
            (sut/sample n (sut/binomial {:n n :p p}) {:seed seed})))
     (is (= (sut/sample n (sut/normal {:location a :scale b}) {:seed seed})
            (sut/sample n (sut/normal {:location a :scale b}) {:seed seed})))
-    (is (= (sut/sample n (sut/lognormal {:location a :scale b}) {:seed seed})
-           (sut/sample n (sut/lognormal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/sample n (sut/log-normal {:location a :scale b}) {:seed seed})
+           (sut/sample n (sut/log-normal {:location a :scale b}) {:seed seed})))
     (is (= (sut/sample n (sut/cauchy {:location a :scale alpha}) {:seed seed})
            (sut/sample n (sut/cauchy {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/sample n (sut/t {:v d}) {:seed seed})
@@ -268,9 +268,10 @@
     (is (converges-to-mean? a
                             (sut/normal {:location a :scale (/ 1 r)})))
     (is (converges-to-mean? (exp (+ a (* 0.5 b b)))
-                            (sut/lognormal {:location a :scale b})))
-    (is (converges-to-mean? (/ (* s (+ (/ 1 r) 0.01)) (- s 1)) ; :scale > 1
-                            (sut/pareto {:shape s :scale (+ (/ 1 r) 0.01)})))
+                            (sut/log-normal {:location a :scale b})))
+    (is (converges-to-mean? (/ (+ 1.0 s) (* r s))
+                            ;; :shape > 1 for finite mean
+                            (sut/pareto {:shape (+ 1.0 s) :scale (/ 1 r)})))
     (is (converges-to-mean? 0.0
                             (sut/t {:v d})))
     (is (converges-to-mean? (/ s r)

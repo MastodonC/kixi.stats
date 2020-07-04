@@ -523,19 +523,19 @@
       :cljs (ISeqable
              (-seq [this] (sampleable->seq this)))))
 
-(deftype ^:no-doc Lognormal
-  [logmu logsd]
+(deftype ^:no-doc LogNormal
+  [mu sd]
   p/PRandomVariable
   (sample-1 [this rng]
-    (exp (+ (* (rand-normal rng) logsd) logmu)))
+    (exp (+ (* (rand-normal rng) sd) mu)))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PQuantile
   (cdf [this x]
-    (* 0.5 (+ 1 (erf (/ (- (log x) logmu)
-                           (sqrt (* 2 logsd logsd)))))))
+    (* 0.5 (+ 1 (erf (/ (- (log x) mu)
+                           (sqrt (* 2 sd sd)))))))
   (quantile [this p]
-    (exp (+ (* -1.41421356237309505 logsd (erfcinv (* 2 p))) logmu)))
+    (exp (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu)))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))
       :cljs (ISeqable
@@ -706,18 +706,20 @@
   (assert (pos? scale) (str "Scale (" scale ") must be positive"))
   (->Cauchy location scale))
 
-(defn lognormal
-  "Returns a Lognormal distribution.
+(defn log-normal
+  "Returns a Log-normal distribution.
+  The parameters are the log of the
+  mean and sd of this distribution.
   Params: {:location ∈ ℝ, :scale ∈ ℝ}"
-  [{:keys [location scale logmu logsd]}]
-  (->Lognormal (or location logmu) (or scale logsd)))
+  [{:keys [location scale mu sd]}]
+  (->LogNormal (or location mu) (or scale sd)))
 
 (defn pareto
   "Returns a Pareto distribution.
   Params: {:scale ∈ ℝ > 0, :shape ∈ ℝ > 0}"
   [{:keys [scale shape]}]
   (assert (and (pos? scale) (pos? shape))
-          (str "Scale (" scale ") and shape (" shape "must be positive."))
+          (str "Scale (" scale ") and shape (" shape ") must be positive."))
   (->Pareto scale shape))
 
 (defn draw
