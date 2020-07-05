@@ -9,14 +9,17 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 * Beta-binomial
 * Binomial
 * Categorical
+* Cauchy
 * Chi-Squared
 * Dirichlet
 * Dirichlet-multinomial
 * Exponential
 * F
 * Gamma
+* Log-normal
 * Multinomial
 * Normal
+* Pareto
 * Poisson
 * Student's t
 * Uniform
@@ -289,6 +292,7 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
   * [Henry Garner](https://github.com/henrygarner)
   * [Simon Belak](https://github.com/sbelak)
   * [Elise Huard](https://github.com/elisehuard)
+  * [Dorab Patel](https://github.com/bombaywalla)
 
 ## License
 

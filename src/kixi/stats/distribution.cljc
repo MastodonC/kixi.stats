@@ -1,6 +1,6 @@
 (ns kixi.stats.distribution
   (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin PI log-gamma sq floor erf erfcinv] :as m]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin tan atan PI log-gamma sq floor erf erfcinv] :as m]
             [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
@@ -506,6 +506,59 @@
         :cljs (ISeqable
                (-seq [this] (sampleable->seq this)))))
 
+(deftype ^:no-doc Cauchy
+  [location scale]
+  p/PRandomVariable
+  (sample-1 [this rng]
+    (+ location (* scale (tan (* PI (- (rand-double rng) 0.5))))))
+  (sample-n [this n rng]
+    (default-sample-n this n rng))
+  p/PQuantile
+  (cdf [this x]
+    (+ 0.5 (/ (atan (/ (- x location) scale)) PI)))
+  (quantile [this p]
+    (+ location (* scale (tan (* PI (- p 0.5))))))
+  #?@(:clj (clojure.lang.Seqable
+            (seq [this] (sampleable->seq this)))
+      :cljs (ISeqable
+             (-seq [this] (sampleable->seq this)))))
+
+(deftype ^:no-doc LogNormal
+  [mu sd]
+  p/PRandomVariable
+  (sample-1 [this rng]
+    (exp (+ (* (rand-normal rng) sd) mu)))
+  (sample-n [this n rng]
+    (default-sample-n this n rng))
+  p/PQuantile
+  (cdf [this x]
+    (* 0.5 (+ 1 (erf (/ (- (log x) mu)
+                           (sqrt (* 2 sd sd)))))))
+  (quantile [this p]
+    (exp (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu)))
+  #?@(:clj (clojure.lang.Seqable
+            (seq [this] (sampleable->seq this)))
+      :cljs (ISeqable
+             (-seq [this] (sampleable->seq this)))))
+
+(deftype ^:no-doc Pareto
+  [scale shape]
+  p/PRandomVariable
+  (sample-1 [this rng]
+    (/ scale (pow (rand-double rng) (/ 1 shape))))
+  (sample-n [this n rng]
+    (default-sample-n this n rng))
+  p/PQuantile
+  (cdf [this x]
+    (if (< scale x)
+      (- 1 (pow (/ scale x) shape))
+      0.0))
+  (quantile [this p]
+    (/ scale (pow (- 1 p) (/ 1 shape))))
+  #?@(:clj (clojure.lang.Seqable
+            (seq [this] (sampleable->seq this)))
+      :cljs (ISeqable
+             (-seq [this] (sampleable->seq this)))))
 
 ;;;; Public API
 
@@ -645,6 +698,29 @@
   Params: {:n ∈ ℕ, :alphas [ℝ >= 0, ...]}"
   [{:keys [n alphas]}]
   (->DirichletMultinomial n alphas))
+
+(defn cauchy
+  "Returns a Cauchy distribution.
+  Params: {:location ∈ ℝ, :scale ∈ ℝ > 0}"
+  [{:keys [location scale]}]
+  (assert (pos? scale) (str "Scale (" scale ") must be positive"))
+  (->Cauchy location scale))
+
+(defn log-normal
+  "Returns a Log-normal distribution.
+  The parameters are the log of the
+  mean and sd of this distribution.
+  Params: {:location ∈ ℝ, :scale ∈ ℝ}"
+  [{:keys [location scale mu sd]}]
+  (->LogNormal (or location mu) (or scale sd)))
+
+(defn pareto
+  "Returns a Pareto distribution.
+  Params: {:scale ∈ ℝ > 0, :shape ∈ ℝ > 0}"
+  [{:keys [scale shape]}]
+  (assert (and (pos? scale) (pos? shape))
+          (str "Scale (" scale ") and shape (" shape ") must be positive."))
+  (->Pareto scale shape))
 
 (defn draw
   "Returns a single variate from the distribution.

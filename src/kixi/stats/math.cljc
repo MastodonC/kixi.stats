@@ -46,6 +46,14 @@
   #?(:clj  (Math/sin x)
      :cljs (js/Math.sin x)))
 
+(defn tan [x]
+  #?(:clj  (Math/tan x)
+     :cljs (js/Math.tan x)))
+
+(defn atan [x]
+  #?(:clj  (Math/atan x)
+     :cljs (js/Math.atan x)))
+
 (defn ceil [x]
   #?(:clj  (Math/ceil x)
      :cljs (js/Math.ceil x)))
