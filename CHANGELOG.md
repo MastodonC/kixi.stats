@@ -1,3 +1,7 @@
+## 0.5.3 (2020-07-05)
+
+* Add Cauchy, Log-normal and Pareto distributions
+
 ## 0.5.2 (2019-07-31)
 
 * Fix compilation error in `kixi.stats.distribution`
