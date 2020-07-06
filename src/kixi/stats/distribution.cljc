@@ -212,11 +212,15 @@
 
 (defn ^:no-doc quantile-t
   [dof p]
-  (let [x (m/ibetainv (* 2 (min p (- 1 p)))
-                      (* 0.5 dof)
-                      0.5)
-        x (sqrt (* dof (/ (- 1 x) x)))]
-    (if (> p 0.5) x (- x))))
+  (cond
+    (<= p 0.0) m/negative-infinity
+    (>= p 1.0) m/infinity
+    :else
+    (let [x (m/ibetainv (* 2 (min p (- 1 p)))
+                        (* 0.5 dof)
+                        0.5)
+          x (sqrt (* dof (/ (- 1 x) x)))]
+      (if (> p 0.5) x (- x)))))
 
 (defn ^:no-doc cdf-t
   [dof x]
