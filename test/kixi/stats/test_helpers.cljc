@@ -37,9 +37,12 @@
 
 (defn some= [f]
   (fn [x y]
-    (if (and (nil? x) (nil? y))
+    (cond
+      (and (nil? x) (nil? y))
       true
-      (f x y))))
+      (or (nil? x) (nil? y))
+      false
+      :else (f x y))))
 
 (defn inf= [f]
   (fn [x y]
@@ -57,19 +60,22 @@
 
 (defn quantile'
   [p coll]
-  (let [coll (->> coll
-                  (remove nil?)
-                  sort
-                  vec)
-        n (count coll)
-        np (min (max 0 (- (* n p) 0.5)) (dec n))
-        i1 (floor np)
-        i2 (ceil np)]
-    (if (<= n 1)
-      (some-> (first coll) double)
-      (+ (nth coll i1)
-         (* (- (nth coll i2) (nth coll i1))
-            (- np (floor np)))))))
+  (cond
+    (<= p 0.0) 0.0
+    :else
+    (let [coll (->> coll
+                    (remove nil?)
+                    sort
+                    vec)
+          n (count coll)
+          np (min (max 0 (- (* n p) 0.5)) (dec n))
+          i1 (floor np)
+          i2 (ceil np)]
+      (if (<= n 1)
+        (some-> (first coll) double)
+        (+ (nth coll i1)
+           (* (- (nth coll i2) (nth coll i1))
+              (- np (floor np))))))))
 
 (defn interpolate
   [x a b]
