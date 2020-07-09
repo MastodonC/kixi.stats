@@ -118,7 +118,7 @@
     (is (=ish p (cdf-quantile (sut/normal {:location a :scale k}) p)))
     (is (=ish p (cdf-quantile (sut/log-normal {:location a :scale k}) p)))
     (is (=ish p (cdf-quantile (sut/cauchy {:location a :scale alpha}) p)))
-    #_(is (=ish p (cdf-quantile (sut/t {:v d}) p)))
+    (is (=ish p (cdf-quantile (sut/t {:v d}) p)))
     (is (=ish p (cdf-quantile (sut/pareto {:shape s :scale (/ 0.5 r)}) p)))
     #_(is (=ish p (cdf-quantile (sut/chi-squared {:k k}) p)))))
 
