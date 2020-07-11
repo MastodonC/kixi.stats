@@ -4,7 +4,7 @@
             [kixi.stats.math :refer [gamma exp log equal]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check]
-            [kixi.stats.test-helpers :refer [approx= =ish numeric cdf' quantile']]
+            [kixi.stats.test-helpers :refer [=ish numeric cdf' quantile']]
             #?@(:cljs
                 [[clojure.test.check.clojure-test :refer-macros [defspec]]
                  [clojure.test.check.properties :as prop :refer-macros [for-all]]
@@ -120,8 +120,7 @@
     (is (=ish p (cdf-quantile (sut/cauchy {:location a :scale alpha}) p)))
     (is (=ish p (cdf-quantile (sut/t {:v d}) p)))
     (is (=ish p (cdf-quantile (sut/pareto {:shape s :scale (/ 0.5 r)}) p)))
-    ;; cdf/quantile of chi-squared seems to be less accurate than others.
-    (is ((approx= 1.1e-3) p (cdf-quantile (sut/chi-squared {:k k}) p)))))
+    (is (=ish p (cdf-quantile (sut/chi-squared {:k k}) p)))))
 
 (defspec seeded-draws-are-deterministic
   test-opts
