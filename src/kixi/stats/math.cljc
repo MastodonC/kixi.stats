@@ -238,7 +238,7 @@
               (- 1 (* h (exp (- (* a (log x)) x (log-gamma a))))))))))))
 
 (defn gamma-pinv
-  "Returns the inverse of the lower regularized inomplete gamma function"
+  "Returns the inverse of the lower regularized incomplete gamma function"
   [p a]
   (cond
     (>= p 1.0) (max 100.0 (+ a (* 100.0 (sqrt a))))
@@ -267,7 +267,7 @@
                     (* afac (exp (- (* a1 (- (log x) lna1)) (- x a1))))
                     (exp (- (* a1 (log x)) gln x)))
                 u (/ err t)
-                t (/ u (- 1 (* 0.5 (min 1 (* u (/ (dec a) (dec x)))))))
+                t (/ u (- 1 (* 0.5 (min 1 (* u (dec (/ (dec a) x)))))))
                 x (- x t)
                 x (if (<= x 0) (* 0.5 (+ x t)) x)]
             (if (or (< (abs t) (* EPS x)) (= j 11))

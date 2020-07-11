@@ -46,3 +46,10 @@
   (is (->> (map vector (range 0.5 25) log-gamma-point-values)
            (every? (fn [[x y]] (approx= (sut/log-gamma x) y 1e-15))))))
 
+(deftest gamma-pinv-returns-reference-value
+  (is (= 0.02223223690217228 (sut/gamma-pinv 1E-8 4))))
+
+(deftest gamma-pinv-result-is-ordered-by-p
+  (is (< (sut/gamma-pinv 1E-11 4)
+         (sut/gamma-pinv 1E-9 4)
+         (sut/gamma-pinv 1E-7 4))))
