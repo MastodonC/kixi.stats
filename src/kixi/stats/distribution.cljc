@@ -224,10 +224,14 @@
 
 (defn ^:no-doc cdf-t
   [dof x]
-  (let [dof2 (* dof 0.5)]
-    (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
-                (* 2 (sqrt (+ (sq x) dof))))
-             dof2 dof2))) 
+  (cond
+    (= x m/negative-infinity) 0.0
+    (= x m/infinity) 1.0
+    :else
+    (let [dof2 (* dof 0.5)]
+      (m/ibeta (/ (+ x (sqrt (+ (sq x) dof)))
+                  (* 2 (sqrt (+ (sq x) dof))))
+               dof2 dof2))))
 
 
 ;;;; Protocol implementations

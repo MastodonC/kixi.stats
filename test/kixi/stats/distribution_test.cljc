@@ -102,6 +102,26 @@
                (every? nil? (vals summary))
                (every? number? (vals summary))))))))
 
+(defn cdf-quantile
+  [dist p]
+  (sut/cdf dist (sut/quantile dist p)))
+
+(defspec cdf-and-quantile-are-inverses
+  test-opts
+  (for-all [a gen/int
+            r gen-rate
+            s gen-shape
+            p gen-probability
+            alpha gen-pos-real
+            k (gen/fmap inc gen/nat)
+            d gen-small-n]
+    (is (=ish p (cdf-quantile (sut/normal {:location a :scale k}) p)))
+    (is (=ish p (cdf-quantile (sut/log-normal {:location a :scale k}) p)))
+    (is (=ish p (cdf-quantile (sut/cauchy {:location a :scale alpha}) p)))
+    (is (=ish p (cdf-quantile (sut/t {:v d}) p)))
+    (is (=ish p (cdf-quantile (sut/pareto {:shape s :scale (/ 0.5 r)}) p)))
+    (is (=ish p (cdf-quantile (sut/chi-squared {:k k}) p)))))
+
 (defspec seeded-draws-are-deterministic
   test-opts
   (for-all [seed gen/int
