@@ -248,6 +248,19 @@
       (+ (* (rand-double rng) (- b a)) a))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    p/PQuantile
+    (cdf [this x]
+      (cond
+        (<= x a) 0.0
+        (>= x b) 1.0
+        :else
+        (/ (- x a) (- b a))))
+    (quantile [this p]
+      (cond
+        (zero? p) a
+        (= p 1.0) b
+        :else
+        (+ a (* p (- b a)))))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
