@@ -1,3 +1,9 @@
+## 0.5.4 (2020-07-12)
+
+* Test that quantile and cdf functions are inverses
+* Fix gamma-pinv issue causing inaccurate chi-square quantiles to sometimes be returned
+* Fix Student's t exception at extreme quantiles
+
 ## 0.5.3 (2020-07-05)
 
 * Add Cauchy, Log-normal and Pareto distributions
