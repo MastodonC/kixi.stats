@@ -604,38 +604,45 @@
 
 (defn uniform
   "Returns a uniform distribution.
-  Params: {:a ∈ ℝ, :b ∈ ℝ}"
+  Params: {:a ∈ ℝ, :b ∈ ℝ, :a < :b}"
   [{:keys [a b]}]
+  (assert (< a b) (str "a (" a ") must be less than b (" b ")."))
   (->Uniform a b))
 
 (defn exponential
   "Returns an exponential distribution.
   Params: {:rate ∈ ℝ > 0}"
   [{:keys [rate]}]
+  (assert (pos? rate) (str "rate (" rate ") must be positive."))
   (->Exponential rate))
 
 (defn bernoulli
   "Returns a Bernoulli distribution.
   Params: {:p ∈ [0 1]}"
   [{:keys [p]}]
+  (assert (<= 0.0 p 1.0) (str "p (" p ") must be between 0.0 and 1.0."))
   (->Bernoulli p))
 
 (defn binomial
   "Return a binomial distribution.
   Params: {:n ∈ ℕ, :p ∈ [0 1]}"
   [{:keys [n p]}]
+  (assert (nat-int? n) (str "n (" n ") must be a natural number."))
+  (assert (<= 0.0 p 1.0) (str "p (" p ") must be between 0.0 and 1.0."))
   (->Binomial n p))
 
 (defn normal
   "Returns a normal distribution.
-  Params: {:location ∈ ℝ, :scale ∈ ℝ}"
+  Params: {:location ∈ ℝ, :scale ∈ ℝ > 0}"
   [{:keys [location scale mu sd]}]
+  (assert (pos? (or scale sd)) (str "scale/sd (" (or scale sd) ") must be positive."))
   (->Normal (or location mu) (or scale sd)))
 
 (defn t
   "Returns a t distribution.
-  Params: {:v ∈ ℕ > 0}"
+  Params: {:v ∈ ℝ > 0}"
   [{:keys [v]}]
+  (assert (pos? v) (str "v (" v ") must be positive."))
   (->T v))
 
 (defn gamma
@@ -654,30 +661,38 @@
   "Returns a beta distribution.
   Params: {:n ∈ ℕ > 0, :alpha ∈ ℝ > 0, :beta ∈ ℝ > 0}"
   [{:keys [n alpha beta] :or {alpha 1.0 beta 1.0}}]
+  (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
+  (assert (and (pos? alpha) (pos? beta)) (str "alpha (" alpha ") and beta (" beta ") must be positive."))
   (->BetaBinomial n alpha beta))
 
 (defn weibull
   "Returns a weibull distribution.
   Params: {:shape ∈ ℝ >= 0, :scale ∈ ℝ >= 0}"
   [{:keys [shape scale] :or {shape 1.0 scale 1.0}}]
+  (assert (and (not (neg? shape)) (not (neg? scale)))
+          (str "shape (" shape ") and scale (" scale ") must not be negative."))
   (->Weibull shape scale))
 
 (defn chi-squared
   "Returns a chi-squared distribution.
   Params: {:k ∈ ℕ > 0}"
   [{:keys [k]}]
+  (assert (pos-int? k) (str "k (" k ") must be a positive integer."))
   (->ChiSquared k))
 
 (defn f
   "Returns an F distribution.
   Params: {:d1 ∈ ℕ > 0, :d2 ∈ ℕ > 0}"
   [{:keys [d1 d2]}]
+  (assert (and (pos-int? d1) (pos-int? d2))
+          (str "d1 (" d1 ") and d2 (" d2 ") must be positive integers."))
   (->F d1 d2))
 
 (defn poisson
   "Returns a Poisson distribution.
   Params: {:lambda ∈ ℝ > 0}"
   [{:keys [lambda]}]
+  (assert (pos? lambda) (str "lambda (" lambda ") must be positive."))
   (->Poisson lambda))
 
 (defn categorical
@@ -686,6 +701,7 @@
   Probabilities should be >= 0 and sum to 1"
   [category-probs]
   (let [[ks ps] (apply map vector category-probs)]
+    (assert (every? #(<= 0.0 % 1.0) ps) "All the probbilities must be between 0.0 and 1.0.")
     (->Categorical ks ps)))
 
 (defn multinomial
@@ -693,33 +709,40 @@
   Params: {:n ∈ ℕ > 0, :probs [ℝ >= 0, ...]}
   Probabilities should be >= 0 and sum to 1"
   [{:keys [n probs]}]
+  (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
+  (assert (every? #(<= 0.0 % 1.0) probs)
+          "All the probbilities must be between 0.0 and 1.0.")
   (->Multinomial n probs))
 
 (defn dirichlet
   "Returns a Dirichlet distribution.
   Params: {:alphas [ℝ >= 0, ...]}"
   [{:keys [alphas]}]
+  (assert (every? #(not (neg? %)) alphas) "All the alphas must be non-negative.")
   (->Dirichlet alphas))
 
 (defn dirichlet-multinomial
   "Returns a Dirichlet-multinomial distribution.
   Params: {:n ∈ ℕ, :alphas [ℝ >= 0, ...]}"
   [{:keys [n alphas]}]
+  (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
+  (assert (every? #(not (neg? %)) alphas) "All the alphas must be non-negative.")
   (->DirichletMultinomial n alphas))
 
 (defn cauchy
   "Returns a Cauchy distribution.
   Params: {:location ∈ ℝ, :scale ∈ ℝ > 0}"
   [{:keys [location scale]}]
-  (assert (pos? scale) (str "Scale (" scale ") must be positive"))
+  (assert (pos? scale) (str "scale (" scale ") must be positive."))
   (->Cauchy location scale))
 
 (defn log-normal
   "Returns a Log-normal distribution.
   The parameters are the log of the
   mean and sd of this distribution.
-  Params: {:location ∈ ℝ, :scale ∈ ℝ}"
+  Params: {:location ∈ ℝ, :scale ∈ ℝ > 0}"
   [{:keys [location scale mu sd]}]
+  (assert (pos? (or scale sd)) (str "scale/sd (" (or scale sd) ") must be positive."))
   (->LogNormal (or location mu) (or scale sd)))
 
 (defn pareto
