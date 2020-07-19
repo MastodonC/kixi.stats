@@ -360,7 +360,9 @@
   (for-all [seed gen/int
             s gen-shape
             r gen-rate
-            k (gen/fmap inc gen/nat)
+            ;; with the next line, the chi-squared test fails.
+            ;; k (gen/fmap inc gen/nat)
+            k gen-small-n
             [a b] (->> (gen/tuple gen/int gen/int)
                        (gen/such-that (fn [[a b]] (not= a b)))
                        (gen/fmap sort))
@@ -371,7 +373,12 @@
          (is (<= a (trunc-draw (sut/normal {:mu 0 :sd (+ 1.0 (abs a)) }) a b seed) b))
          ;; v between 1 and 2 so the distribution is thicker tailed.
          (is (<= f (trunc-draw (sut/t {:v v}) f g seed) g))
-         ;; This tests fails.  Investigate more.
+         ;; This commented out test fails if k = 63 seed = 41 n = 0.1 m = 0.3
+         ;; (sut/quantile (sut/chi-squared {:k 63}) (sut/cdf (sut/chi-squared {:k 63}) 0.1)) => 0.004285954228546346
+         ;; (sut/quantile (sut/chi-squared {:k 63}) (sut/cdf (sut/chi-squared {:k 63}) 0.3)) => 0.004285954228546346
+         ;; This commented out test fails if k = 1 seed = 25 n = 71.0 m = 94.0
+         ;; (sut/quantile (sut/chi-squared {:k 1}) (sut/cdf (sut/chi-squared {:k 1}) 71.0)) => 200.0
+         ;; (sut/quantile (sut/chi-squared {:k 1}) (sut/cdf (sut/chi-squared {:k 1}) 94.0)) => 200.0
          #_(is (<= n (trunc-draw (sut/chi-squared {:k k}) n m seed) m))
          ;; lower and upper must be positive since log-normal support is (0, Inf)
          (is (<= n (trunc-draw (sut/log-normal {:mu 0 :sd (+ 1.0 n) }) n m seed) m))
