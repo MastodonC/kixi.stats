@@ -1,7 +1,7 @@
 (ns kixi.stats.distribution
   (:refer-clojure :exclude [shuffle rand-int])
   (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin tan atan PI log-gamma sq floor erf erfcinv] :as m]
-            [kixi.stats.protocols :as p :refer [quantile cdf minimum maximum sample-1 sample-n sample-frequencies]]
+            [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
 ;;;; Randomness helpers
@@ -573,7 +573,7 @@
   p/PRandomVariable
   (sample-1 [this rng]
     (p/quantile distribution
-                (+ (* (rand-double rng) (- upper-cdf lower-cdf)) lower-cdf)))
+              (+ (* (rand-double rng) (- upper-cdf lower-cdf)) lower-cdf)))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PBounded
@@ -586,12 +586,11 @@
           :else (/ (- (p/cdf distribution x) lower-cdf)
                    (- upper-cdf lower-cdf))))
   (quantile [this p]
-    (quantile distribution (+ (* p (- upper-cdf lower-cdf)) lower-cdf)))
+    (p/quantile distribution (+ (* p (- upper-cdf lower-cdf)) lower-cdf)))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))
       :cljs (ISeqable
              (-seq [this] (sampleable->seq this)))))
-  
 
 ;;;; Public API
 
@@ -763,10 +762,14 @@
   [{:keys [distribution lower upper]}]
   (assert (and (satisfies? p/PRandomVariable distribution)
                (satisfies? p/PQuantile distribution))
-          "distribution must satisfy PRandomVaraible and PQuantile.") 
+          "distribution must satisfy PRandomVaraible and PQuantile.")
   (assert (and (number? lower) (number? upper) (< lower upper))
           (str "lower (" lower ") must be less than upper (" upper ")."))
-  (->Truncated distribution lower upper (cdf distribution lower) (cdf distribution upper)))
+  (let [cdf-lower (cdf distribution lower)
+        cdf-upper (cdf distribution upper)]
+    (assert (< cdf-lower cdf-upper)
+            (str "lower (" lower ") and upper (" upper ") are beyond the extremes of the distribution."))
+    (->Truncated distribution lower upper cdf-lower cdf-upper)))
 
 (defn draw
   "Returns a single variate from the distribution.
