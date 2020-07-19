@@ -4,6 +4,12 @@
             [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
 
+;;;; Assert helpers
+
+(defn ^:no-doc non-neg?
+  [x]
+  (complement neg?))
+
 ;;;; Randomness helpers
 
 (def ^:no-doc next-rng
@@ -647,14 +653,17 @@
 
 (defn gamma
   "Returns a gamma distribution.
-  Params: {:shape ∈ ℝ, :scale ∈ ℝ} or {:shape ∈ ℝ, :rate ∈ ℝ}"
+  Params: {:shape ∈ ℝ > 0, :scale ∈ ℝ > 0} or {:shape ∈ ℝ > 0, :rate ∈ ℝ > 0}"
   [{:keys [shape scale rate] :or {shape 1.0}}]
+  (assert (and (pos? shape) (pos? (or scale rate)))
+          (str "shape (" shape ") and scale/rate (" (or scale rate) ") must be positive."))
   (->Gamma shape (or scale (/ 1.0 rate))))
 
 (defn beta
   "Returns a beta distribution.
-  Params: {:alpha ∈ ℝ, :beta ∈ ℝ}"
+  Params: {:alpha ∈ ℝ > 0, :beta ∈ ℝ > 0}"
   [{:keys [alpha beta] :or {alpha 1.0 beta 1.0}}]
+  (assert (and (pos? alpha) (pos? beta)) (str "alpha (" alpha ") and beta (" beta ") must be positive."))
   (->Beta alpha beta))
 
 (defn beta-binomial
@@ -669,7 +678,7 @@
   "Returns a weibull distribution.
   Params: {:shape ∈ ℝ >= 0, :scale ∈ ℝ >= 0}"
   [{:keys [shape scale] :or {shape 1.0 scale 1.0}}]
-  (assert (and (not (neg? shape)) (not (neg? scale)))
+  (assert (and (non-neg? shape) (non-neg? scale))
           (str "shape (" shape ") and scale (" scale ") must not be negative."))
   (->Weibull shape scale))
 
@@ -682,10 +691,10 @@
 
 (defn f
   "Returns an F distribution.
-  Params: {:d1 ∈ ℕ > 0, :d2 ∈ ℕ > 0}"
+  Params: {:d1 ∈ ℝ > 0, :d2 ∈ ℝ > 0}"
   [{:keys [d1 d2]}]
-  (assert (and (pos-int? d1) (pos-int? d2))
-          (str "d1 (" d1 ") and d2 (" d2 ") must be positive integers."))
+  (assert (and (pos? d1) (pos? d2))
+          (str "d1 (" d1 ") and d2 (" d2 ") must be positive."))
   (->F d1 d2))
 
 (defn poisson
@@ -701,7 +710,7 @@
   Probabilities should be >= 0 and sum to 1"
   [category-probs]
   (let [[ks ps] (apply map vector category-probs)]
-    (assert (every? #(<= 0.0 % 1.0) ps) "All the probbilities must be between 0.0 and 1.0.")
+    (assert (every? #(<= 0.0 % 1.0) ps) "All the probabilities must be between 0.0 and 1.0.")
     (->Categorical ks ps)))
 
 (defn multinomial
@@ -711,14 +720,14 @@
   [{:keys [n probs]}]
   (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
   (assert (every? #(<= 0.0 % 1.0) probs)
-          "All the probbilities must be between 0.0 and 1.0.")
+          "All the probabilities must be between 0.0 and 1.0.")
   (->Multinomial n probs))
 
 (defn dirichlet
   "Returns a Dirichlet distribution.
   Params: {:alphas [ℝ >= 0, ...]}"
   [{:keys [alphas]}]
-  (assert (every? #(not (neg? %)) alphas) "All the alphas must be non-negative.")
+  (assert (every? non-neg? alphas) "All the alphas must be non-negative.")
   (->Dirichlet alphas))
 
 (defn dirichlet-multinomial
@@ -726,7 +735,7 @@
   Params: {:n ∈ ℕ, :alphas [ℝ >= 0, ...]}"
   [{:keys [n alphas]}]
   (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
-  (assert (every? #(not (neg? %)) alphas) "All the alphas must be non-negative.")
+  (assert (every? non-neg? alphas) "All the alphas must be non-negative.")
   (->DirichletMultinomial n alphas))
 
 (defn cauchy
