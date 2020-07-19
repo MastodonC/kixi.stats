@@ -6,8 +6,7 @@
 
 ;;;; Assert helpers
 
-(defn ^:no-doc non-neg?
-  [x]
+(def ^:no-doc non-neg?
   (complement neg?))
 
 ;;;; Randomness helpers
