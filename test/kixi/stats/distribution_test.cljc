@@ -28,6 +28,12 @@
 (def gen-rate
   (gen/such-that pos? gen-probability))
 
+(def gen-two-ascending-ints
+  "Generate two ints a and b such that a < b."
+  (->> (gen/tuple gen/int gen/int)
+       (gen/such-that (fn [[a b]] (not= a b)))
+       (gen/fmap sort)))
+
 (def gen-alphas
   "Returns a vector of alphas"
   (gen/vector gen/s-pos-int 1 100))
@@ -125,8 +131,7 @@
 (defspec seeded-draws-are-deterministic
   test-opts
   (for-all [seed gen/int
-            a gen/int
-            b gen/int
+            [a b] gen-two-ascending-ints
             r gen-rate
             s gen-shape
             p gen-probability
@@ -144,10 +149,10 @@
            (sut/draw (sut/bernoulli {:p p}) {:seed seed})))
     (is (= (sut/draw (sut/binomial {:n n :p p}) {:seed seed})
            (sut/draw (sut/binomial {:n n :p p}) {:seed seed})))
-    (is (= (sut/draw (sut/normal {:location a :scale b}) {:seed seed})
-           (sut/draw (sut/normal {:location a :scale b}) {:seed seed})))
-    (is (= (sut/draw (sut/log-normal {:location a :scale b}) {:seed seed})
-           (sut/draw (sut/log-normal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/draw (sut/normal {:location a :scale alpha}) {:seed seed})
+           (sut/draw (sut/normal {:location a :scale alpha}) {:seed seed})))
+    (is (= (sut/draw (sut/log-normal {:location a :scale alpha}) {:seed seed})
+           (sut/draw (sut/log-normal {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/draw (sut/cauchy {:location a :scale alpha}) {:seed seed})
            (sut/draw (sut/cauchy {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/draw (sut/t {:v d}) {:seed seed})
@@ -172,8 +177,7 @@
 (defspec seeded-samples-are-deterministic
   test-opts
   (for-all [seed gen/int
-            a gen/int
-            b gen/int
+            [a b] gen-two-ascending-ints
             r gen-rate
             s gen-shape
             p gen-probability
@@ -191,10 +195,10 @@
            (sut/sample n (sut/bernoulli {:p p}) {:seed seed})))
     (is (= (sut/sample n (sut/binomial {:n n :p p}) {:seed seed})
            (sut/sample n (sut/binomial {:n n :p p}) {:seed seed})))
-    (is (= (sut/sample n (sut/normal {:location a :scale b}) {:seed seed})
-           (sut/sample n (sut/normal {:location a :scale b}) {:seed seed})))
-    (is (= (sut/sample n (sut/log-normal {:location a :scale b}) {:seed seed})
-           (sut/sample n (sut/log-normal {:location a :scale b}) {:seed seed})))
+    (is (= (sut/sample n (sut/normal {:location a :scale alpha}) {:seed seed})
+           (sut/sample n (sut/normal {:location a :scale alpha}) {:seed seed})))
+    (is (= (sut/sample n (sut/log-normal {:location a :scale alpha}) {:seed seed})
+           (sut/sample n (sut/log-normal {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/sample n (sut/cauchy {:location a :scale alpha}) {:seed seed})
            (sut/sample n (sut/cauchy {:location a :scale alpha}) {:seed seed})))
     (is (= (sut/sample n (sut/t {:v d}) {:seed seed})
@@ -267,8 +271,7 @@
 (defspec sample-means-converge-to-parameter
   {:num-tests 1 :par 4}
   (for-all [seed gen/int
-            a gen/int
-            b gen/int
+            [a b] gen-two-ascending-ints
             r gen-rate
             s gen-shape
             p gen-probability
@@ -287,8 +290,8 @@
                             (sut/binomial {:n n :p p})))
     (is (converges-to-mean? a
                             (sut/normal {:location a :scale (/ 1 r)})))
-    (is (converges-to-mean? (exp (+ a (* 0.5 b b)))
-                            (sut/log-normal {:location a :scale b})))
+    (is (converges-to-mean? (exp (+ a (* 0.5 alpha alpha)))
+                            (sut/log-normal {:location a :scale alpha})))
     (is (converges-to-mean? (/ (+ 1.0 s) (* r s))
                             ;; :shape > 1 for finite mean
                             (sut/pareto {:shape (+ 1.0 s) :scale (/ 1 r)})))
@@ -330,9 +333,7 @@
 (defspec uniform-does-not-exceed-bounds
   test-opts
   (for-all [seed gen/int
-            [a b] (->> (gen/tuple gen/int gen/int)
-                       (gen/such-that (fn [[a b]] (not= a b)))
-                       (gen/fmap sort))]
+            [a b] gen-two-ascending-ints]
     (let [draw (sut/draw (sut/uniform {:a a :b b}) {:seed seed})]
       (is (and (<= a draw) (< draw b))))))
 
