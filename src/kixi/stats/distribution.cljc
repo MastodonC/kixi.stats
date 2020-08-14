@@ -260,6 +260,11 @@
       (/ (- (log (rand-double rng))) rate))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    p/PQuantile
+    (cdf [this x]
+      (- 1.0 (exp (- (* rate x)))))
+    (quantile [this p]
+      (/ (- (log (- 1.0 p))) rate))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable

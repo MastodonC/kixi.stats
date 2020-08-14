@@ -122,6 +122,7 @@
             k (gen/fmap inc gen/nat)
             d gen-small-n]
     (is (=ish p (cdf-quantile (sut/normal {:location a :scale k}) p)))
+    (is (=ish p (cdf-quantile (sut/exponential {:rate r}) p)))
     (is (=ish p (cdf-quantile (sut/log-normal {:location a :scale k}) p)))
     (is (=ish p (cdf-quantile (sut/cauchy {:location a :scale alpha}) p)))
     (is (=ish p (cdf-quantile (sut/t {:v d}) p)))
