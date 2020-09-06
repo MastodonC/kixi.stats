@@ -114,13 +114,14 @@
 
 (defspec cdf-and-quantile-are-inverses
   test-opts
-  (for-all [a gen/int
+  (for-all [[a b] gen-two-ascending-ints
             r gen-rate
             s gen-shape
             p gen-probability
             alpha gen-pos-real
             k (gen/fmap inc gen/nat)
             d gen-small-n]
+    (is (=ish p (cdf-quantile (sut/uniform {:a a :b b}) p)))
     (is (=ish p (cdf-quantile (sut/normal {:location a :scale k}) p)))
     (is (=ish p (cdf-quantile (sut/exponential {:rate r}) p)))
     (is (=ish p (cdf-quantile (sut/log-normal {:location a :scale k}) p)))
