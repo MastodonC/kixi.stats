@@ -35,6 +35,7 @@
 
 (defn chi-squared-test
   "Calculates the X^2 test of independence for a given contingency table.
+  Returns a reified kixi.stats.protocols/PTestResult.
   See kixi.stats.core/cross-tabulate"
   [^kixi.stats.protocols.PContingencyTable table]
   (let [margins (p/margin-totals table)
@@ -57,6 +58,7 @@
   sd: the population standard deviation
   mean: the sample mean
   n: the sample size
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/simple-z-test"
   [{:keys [mu sd]} {:keys [mean n]}]
   (when (and (pos? n) (pos? sd))
@@ -66,6 +68,7 @@
 (defn z-test
   "Calculates the z-test of statistical significance between two sample means.
   Requires the mean, sd and sample size (n) of both samples.
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/z-test"
   [{mean-x :mean sd-x :sd n-x :n}
    {mean-y :mean sd-y :sd n-y :n}]
@@ -81,6 +84,7 @@
 (defn t-test
   "Calculates Welch's unequal variances t-test of statistical significance.
   Requires the mean, sd and sample size (n) of both samples.
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/t-test"
   [{mean-a :mean sd-a :sd n-a :n}
    {mean-b :mean sd-b :sd n-b :n}]
@@ -103,6 +107,7 @@
   sd: the population standard deviation
   mean: the sample mean
   n: the sample size
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/simple-t-test"
   [{:keys [mu sd]} {:keys [mean n]}]
   (let [dof (dec n)

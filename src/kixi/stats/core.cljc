@@ -469,7 +469,7 @@
 (defn simple-linear-regression
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, calculates a least squares linear model between fx and fy over inputs.
-  Returns a vector containing the coefficients: offset and slope.
+  Returns a reified kixi.stats.protocols/PParamaterised.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the linear relationship is nil. See
   https://en.wikipedia.org/wiki/Simple_linear_regression."
@@ -480,6 +480,7 @@
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
+  Returns a reified kixi.stats.protocols/PDependent.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
   ([fx fy]
@@ -495,6 +496,8 @@
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
+  Returns a reified kixi.stats.protocols/PDependent if alpha is supplied,
+  or a reified kixi.stats.protocols/PDependentWithSignificance otherwise.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
   ([fx fy]
@@ -517,6 +520,7 @@
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
+  Returns a reified kixi.stats.protocols/PDependent.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
   ([fx fy]
@@ -534,6 +538,8 @@
   "Given two functions: (fx input) and (fy input), each of which returns a
   number, and an x value, calculates the standard error of the least
   squares linear model of fx and fy over inputs.
+  Returns a reified kixi.stats.protocols/PDependent if alpha is supplied,
+  or a reified kixi.stats.protocols/PDependentWithSignificance otherwise.
   Ignores any records with fx or fy are nil. If there are no records with
   values for fx and fy, the standard error of the estimate is nil."
   ([fx fy]
