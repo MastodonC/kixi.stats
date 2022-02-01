@@ -18,7 +18,7 @@
         :<  (d/cdf distribution statistic)
         :>  (- 1 (d/cdf distribution statistic)))))
   (significant? [this alpha]
-    (significant? [this alpha h1]))
+    (significant? this alpha h1))
   (significant? [this alpha alternate]
     (when (and statistic distribution alpha alternate)
       (let [critical (d/critical-value distribution alpha alternate)]
