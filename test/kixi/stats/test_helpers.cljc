@@ -1,4 +1,5 @@
 (ns kixi.stats.test-helpers
+  (:refer-clojure :exclude [abs])
   (:require [clojure.test.check.generators :as gen]
             [kixi.stats.math :refer [abs equal floor ceil]]))
 
