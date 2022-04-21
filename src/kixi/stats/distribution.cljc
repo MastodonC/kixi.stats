@@ -1,5 +1,5 @@
 (ns kixi.stats.distribution
-  (:refer-clojure :exclude [shuffle rand-int])
+  (:refer-clojure :exclude [shuffle rand-int abs])
   (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin tan atan PI log-gamma sq floor erf erfcinv] :as m]
             [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
             [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))

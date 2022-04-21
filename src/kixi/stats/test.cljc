@@ -1,4 +1,5 @@
 (ns kixi.stats.test
+  (:refer-clojure :exclude [abs])
   (:require [kixi.stats.distribution :as d]
             [kixi.stats.math :refer [abs clamp pow sq sqrt]]
             [kixi.stats.protocols :as p]
