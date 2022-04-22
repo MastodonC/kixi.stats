@@ -47,7 +47,7 @@
 
 (defn inf= [f]
   (fn [x y]
-    (if (and (infinite? x) (infinite? y))
+    (if (and (infinite? x) (= x y))
       true
       (f x y))))
 
