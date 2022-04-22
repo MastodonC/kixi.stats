@@ -1,12 +1,11 @@
 (ns kixi.stats.test-helpers
-  (:refer-clojure :exclude [abs])
+  (:refer-clojure :exclude [abs infinite?])
   (:require [clojure.test.check.generators :as gen]
             [kixi.stats.math :refer [abs equal floor ceil]]))
 
-
-#?(:clj
-   (defn infinite? [x]
-     (and (float? x) (.isInfinite x))))
+(defn infinite? [x]
+  #?(:clj (Double/isInfinite x)
+     :cljs (cljs.core/infinite? x)))
 
 (defn finite?
   [x]
