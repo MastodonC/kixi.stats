@@ -1,5 +1,5 @@
 (ns kixi.stats.math
-  (:refer-clojure :exclude [infinite?]))
+  (:refer-clojure :exclude [infinite? abs]))
 
 (def PI
   #?(:clj Math/PI

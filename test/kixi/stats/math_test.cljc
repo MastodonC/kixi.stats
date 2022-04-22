@@ -1,4 +1,5 @@
 (ns kixi.stats.math-test
+  (:refer-clojure :exclude [abs])
   (:require [kixi.stats.math :as sut :refer [abs]]
             #?@(:cljs
                 [[cljs.test :refer-macros [is deftest]]]
