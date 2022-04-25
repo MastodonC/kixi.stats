@@ -3,7 +3,7 @@
 * Add quantile and cdf support for the uniform and exponential distributions
 * Assert `kixi.stats.distribution` parameters are within the valid range
 * Update docstrings in `kixi.stats.core` to describe when a `kixi.stats.protocol` type is returned
-* Fix bug in tests whereby positive and negative equal would test equal
+* Fix bug in tests whereby positive and negative infinity would test equal
 * Fix bug in `significant?` which returned an error when the number of tails was unspecified
 * Exclude `abs` and `infinite?` to prevent compilation warnings
 
