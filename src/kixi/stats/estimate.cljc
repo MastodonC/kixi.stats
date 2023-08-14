@@ -4,7 +4,7 @@
             [kixi.stats.protocols :as p]))
 
 (defn simple-linear-regression
-  [{:keys [x-bar y-bar ss-x ss-xy] :as sum-squares}]
+  [{:keys [x-bar y-bar ss-x ss-xy]}]
   (when-not (zero? ss-x)
     (let [slope (/ ss-xy ss-x)
           offset (- y-bar (* x-bar slope))]
@@ -17,7 +17,7 @@
           [offset slope])))))
 
 (defn regression-standard-error
-  [{:keys [n x-bar y-bar ss-x ss-y ss-xy] :as sum-squares} x]
+  [{:keys [n x-bar ss-x ss-y ss-xy]} x]
   (when (and (> n 2) (not (zero? ss-x)))
     (sqrt
      (* (/ 1 (- n 2))
@@ -37,7 +37,7 @@
       (upper [_] (+ y-hat err)))))
 
 (defn regression-prediction-standard-error
-  [{:keys [n x-bar y-bar ss-x ss-y ss-xy] :as sum-squares} x]
+  [{:keys [n x-bar ss-x ss-y ss-xy]} x]
   (when (and (> n 2) (not (zero? ss-x)))
     (sqrt
      (* (/ 1 (- n 2))

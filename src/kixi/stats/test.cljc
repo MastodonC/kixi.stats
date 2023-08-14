@@ -12,7 +12,7 @@
   p/PTestResult
   (p-value [this]
     (p-value this h1))
-  (p-value [this alternate]
+  (p-value [_ alternate]
     (when (and statistic distribution alternate)
       (case alternate
         :<> (clamp (* 2 (d/cdf distribution (- (abs statistic)))) 0.0 1.0)
@@ -20,7 +20,7 @@
         :>  (- 1 (d/cdf distribution statistic)))))
   (significant? [this alpha]
     (significant? this alpha h1))
-  (significant? [this alpha alternate]
+  (significant? [_ alpha alternate]
     (when (and statistic distribution alpha alternate)
       (let [critical (d/critical-value distribution alpha alternate)]
         (case alternate
@@ -101,7 +101,7 @@
                        (/ (pow sd-b 4) (* n-b n-b (dec n-b))))))]
     (when (and t dof)
       (test-result t (d/t {:v dof})))))
- 
+
 (defn simple-t-test
   "Calculates the t-test of statistical significance for a sample mean.
   mu: the population mean
