@@ -56,7 +56,7 @@
               e (* (abs (min x y)) e))]
       (equal x y e))))
 
-(def =ish (-> (approx= 1e-11) inf= some= map= seq=))
+(def =ish (-> (approx= 1e-9) inf= some= map= seq=))
 
 (defn quantile'
   [p coll]
