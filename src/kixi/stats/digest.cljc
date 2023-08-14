@@ -9,7 +9,7 @@
 #?(:clj
    (defn t-digest
      "Return a reducing function which uses the t-digest to summarize a seq"
-     [{:keys [compression] :or {compression 100} :as opts}]
+     [{:keys [compression] :or {compression 100}}]
      (fn
        ([] (TDigest/createAvlTreeDigest compression))
        ([^TDigest digest x]

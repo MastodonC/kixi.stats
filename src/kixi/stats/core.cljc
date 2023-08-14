@@ -1,12 +1,12 @@
 (ns kixi.stats.core
+  (:refer-clojure :exclude [count min max])
   (:require [kixi.stats.digest :as digest]
-            [kixi.stats.distribution :as d]
+            #?(:clj [kixi.stats.distribution :as d])
             [kixi.stats.estimate :as e]
             [kixi.stats.math :refer [sq sqrt pow root infinity negative-infinity infinite?]]
             [kixi.stats.protocols :as p]
             [kixi.stats.test :as t]
-            [redux.core :refer [fuse-matrix]])
-  (:refer-clojure :exclude [count min max]))
+            [redux.core :refer [fuse-matrix]]))
 
 (defn ^:no-doc somef
   [f & args]
@@ -66,14 +66,13 @@
                        fxs))
         (inc n)])
       ([[cells margins n]]
-       (let [dimensions 2]
-         (reify p/PContingencyTable
-           (cell [_ coordinates]
-             (get cells coordinates 0))
-           (grand-total [_] n)
-           (margin-totals [_] margins)
-           (size [_]
-             (mapv clojure.core/count margins))))))))
+       (reify p/PContingencyTable
+         (cell [_ coordinates]
+           (get cells coordinates 0))
+         (grand-total [_] n)
+         (margin-totals [_] margins)
+         (size [_]
+           (mapv clojure.core/count margins)))))))
 
 (def count
   "Calculates the count of inputs."
@@ -138,7 +137,7 @@
              c' (inc c)
              m' (+ m (/ (- e m) c'))]
          [c' m' (+ ss (* (- e m') (- e m)))])))
-    ([[c m ss]]
+    ([[c _m ss]]
      (when-not (zero? c)
        (let [c' (dec c)]
          (if (pos? c')
@@ -344,7 +343,7 @@
             (+ ssx  (* (- x mx') (- x mx)))
             (+ ssy  (* (- y my') (- y my)))
             (+ ssxy (* (- x mx') (- y my)))]))))
-    ([[c mx my ssx ssy ssxy]]
+    ([[_c _mx _my ssx ssy ssxy]]
      (let [d (sqrt (* ssx ssy))]
        (when-not (zero? d)
          (/ ssxy d))))))
@@ -369,7 +368,7 @@
            [c' my'
             (+ ssr  (* r r))
             (+ ssy  (* (- y my') (- y my)))]))))
-    ([[c my ssr ssy]]
+    ([[c _my ssr ssy]]
      (when-not (or (zero? c) (zero? ssy))
        (- 1 (/ ssr ssy))))))
 
@@ -383,7 +382,7 @@
   https://stats.stackexchange.com/questions/48703/what-is-the-adjusted-r-squared-formula-in-lm-in-r-and-how-should-it-be-interpret"
   [fy-hat fy k]
   (completing (r-squared fy-hat fy)
-              (fn [[c my ssr ssy]]
+              (fn [[c _my ssr ssy]]
                 (when (and (pos? ssy)
                            (pos? (- c k 1)))
                   (- 1 (/ (* (/ ssr ssy) (dec c))

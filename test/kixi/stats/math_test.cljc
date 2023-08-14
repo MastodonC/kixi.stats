@@ -1,10 +1,7 @@
 (ns kixi.stats.math-test
   (:refer-clojure :exclude [abs])
-  (:require [kixi.stats.math :as sut :refer [abs]]
-            #?@(:cljs
-                [[cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test :refer [is deftest]]])))
+  (:require [clojure.test :refer [is deftest]]
+            [kixi.stats.math :as sut :refer [abs]]))
 
 (defn approx= [a b tol]
   (< (abs (- a b)) tol))
