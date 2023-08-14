@@ -1,18 +1,14 @@
 (ns kixi.stats.distribution-test
-  (:require [kixi.stats.distribution :as sut]
-            [kixi.stats.core :as kixi]
-            [kixi.stats.math :refer [gamma exp log equal]]
+  (:require [clojure.test :refer [is]]
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.properties :as prop :refer [for-all]]
+            [kixi.stats.distribution :as sut]
+            #?(:clj [kixi.stats.core :as kixi])
+            [kixi.stats.math :refer [gamma exp equal]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check]
-            [kixi.stats.test-helpers :refer [=ish numeric cdf' quantile']]
-            #?@(:cljs
-                [[clojure.test.check.clojure-test :refer-macros [defspec]]
-                 [clojure.test.check.properties :as prop :refer-macros [for-all]]
-                 [cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test.check.clojure-test :refer [defspec]]
-                 [clojure.test.check.properties :as prop :refer [for-all]]
-                 [clojure.test :refer [is deftest]]])))
+            [kixi.stats.test-helpers :refer #?(:clj  [=ish numeric cdf' quantile']
+                                               :cljs [=ish])]))
 
 (def test-opts
   {:num-tests 100
@@ -226,7 +222,7 @@
   [mean]
   (fn
     ([] [0 0 0])
-    ([[n m ss :as acc] e]
+    ([[n m ss] e]
      (let [n' (inc n)
            m' (+ m (/ (- e m) n'))
            ss (+ ss (* (- e m') (- e m)))
@@ -247,11 +243,11 @@
      (let [acc (mapv #(if (reduced? %2)
                         %2
                         (%1 %2 %3)) rfs acc e)
-           [done run res] (reduce (fn [[done run res] x]
-                                    (if (reduced? x)
-                                      [(inc done) run (conj res (unreduced x))]
-                                      [done (inc run) res]))
-                                  [0 0 []] acc)]
+           [_done run res] (reduce (fn [[done run res] x]
+                                     (if (reduced? x)
+                                       [(inc done) run (conj res (unreduced x))]
+                                       [done (inc run) res]))
+                                   [0 0 []] acc)]
        (if (or (zero? run)
                (and (= run 1) (every? true? res)))
          (reduced (mapv #(if (reduced? %1)

@@ -1,8 +1,8 @@
 (ns kixi.stats.distribution
   (:refer-clojure :exclude [shuffle rand-int abs])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin tan atan PI log-gamma sq floor erf erfcinv] :as m]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos tan atan PI sq floor erf erfcinv] :as m]
             [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
-            [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
+            [clojure.test.check.random :refer [make-random rand-double split split-n]]))
 
 ;;;; Assert helpers
 
@@ -244,18 +244,18 @@
 (deftype ^:no-doc Uniform
     [a b]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (+ (* (rand-double rng) (- b a)) a))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (cond
         (<= x a) 0.0
         (>= x b) 1.0
         :else
         (/ (- x a) (- b a))))
-    (quantile [this p]
+    (quantile [_ p]
       (cond
         (zero? p) a
         (= p 1.0) b
@@ -269,14 +269,14 @@
 (deftype ^:no-doc Exponential
     [rate]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (/ (- (log (rand-double rng))) rate))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (- 1.0 (exp (- (* rate x)))))
-    (quantile [this p]
+    (quantile [_ p]
       (/ (- (log (- 1.0 p))) rate))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
@@ -286,7 +286,7 @@
 (deftype ^:no-doc Binomial
     [n p]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (rand-binomial n p rng))
     (sample-n [this n rng]
       (default-sample-n this n rng))
@@ -302,15 +302,15 @@
 (deftype ^:no-doc Bernoulli
     [p]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (< (rand-double rng) p))
-    (sample-n [this n rng]
+    (sample-n [_ n rng]
       (let [v (sample-1 (->Binomial n p) rng)]
         (-> (concat (repeat v true)
                     (repeat (- n v) false))
             (shuffle rng))))
     p/PDiscreteRandomVariable
-    (sample-frequencies [this n rng]
+    (sample-frequencies [_ n rng]
       (let [v (sample-1 (->Binomial n p) rng)]
         {true v false (- n v)}))
     #?@(:clj (clojure.lang.Seqable
@@ -321,15 +321,15 @@
 (deftype ^:no-doc Normal
     [mu sd]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (+ (* (rand-normal rng) sd) mu))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (* 0.5 (+ 1 (erf (/ (- x mu)
                           (sqrt (* 2 sd sd)))))))
-    (quantile [this p]
+    (quantile [_ p]
       (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
@@ -339,16 +339,16 @@
 (deftype ^:no-doc T
     [dof]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)]
         (* (rand-normal r1)
            (sqrt (/ dof (* 2 (rand-gamma (* 0.5 dof) r2)))))))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (cdf-t dof x))
-    (quantile [this p]
+    (quantile [_ p]
       (quantile-t dof p))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
@@ -358,7 +358,7 @@
 (deftype ^:no-doc Gamma
     [shape scale]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (* (rand-gamma shape rng) scale))
     (sample-n [this n rng]
       (default-sample-n this n rng))
@@ -370,7 +370,7 @@
 (deftype ^:no-doc Beta
     [alpha beta]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (rand-beta alpha beta rng))
     (sample-n [this n rng]
       (default-sample-n this n rng))
@@ -382,7 +382,7 @@
 (deftype ^:no-doc BetaBinomial
     [n alpha beta]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)
             p (rand-beta alpha beta r1)]
         (rand-binomial n p r2)))
@@ -396,14 +396,14 @@
 (deftype ^:no-doc ChiSquared
     [k]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (* (rand-gamma (/ k 2) rng) 2))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (m/lower-regularized-gamma (* 0.5 k) (* 0.5 x)))
-    (quantile [this p]
+    (quantile [_ p]
       (* 2.0 (m/gamma-pinv p (* 0.5 k))))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
@@ -413,7 +413,7 @@
 (deftype ^:no-doc F
     [d1 d2]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)
             x1 (* (rand-gamma (/ d1 2) r1) 2)
             x2 (* (rand-gamma (/ d2 2) r2) 2)]
@@ -428,7 +428,7 @@
 (deftype ^:no-doc Poisson
     [lambda]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [l (exp (- lambda))]
         (loop [p 1 k 0 rng rng]
           (let [p (* p (rand-double rng))]
@@ -445,7 +445,7 @@
 (deftype ^:no-doc Weibull
     [shape scale]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (* (pow (- (log (rand-double rng)))
               (/ 1 shape))
          scale))
@@ -459,12 +459,12 @@
 (deftype ^:no-doc Categorical
     [ks ps]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (first (categorical-sample ks ps 1 rng)))
-    (sample-n [this n rng]
+    (sample-n [_ n rng]
       (shuffle (categorical-sample ks ps n rng) rng))
     p/PDiscreteRandomVariable
-    (sample-frequencies [this n rng]
+    (sample-frequencies [_ n rng]
       (loop [coll (transient {}) n n
              rem 1 rng rng
              ks ks ps ps]
@@ -484,7 +484,7 @@
 (deftype ^:no-doc Multinomial
     [n ps]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (loop [coll (transient []) n n
              rem 1 rng rng
              ps ps]
@@ -508,7 +508,7 @@
 (deftype ^:no-doc Dirichlet
     [as]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [rs (split-n rng (count as))
             xs (map #(rand-gamma %1 %2) as rs)
             s (apply + xs)]
@@ -523,7 +523,7 @@
 (deftype ^:no-doc DirichletMultinomial
     [n as]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)
             ps (sample-1 (->Dirichlet as) r1)]
         (sample-1 (->Multinomial n ps) r2)))
@@ -540,14 +540,14 @@
 (deftype ^:no-doc Cauchy
   [location scale]
   p/PRandomVariable
-  (sample-1 [this rng]
+  (sample-1 [_ rng]
     (+ location (* scale (tan (* PI (- (rand-double rng) 0.5))))))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PQuantile
-  (cdf [this x]
+  (cdf [_ x]
     (+ 0.5 (/ (atan (/ (- x location) scale)) PI)))
-  (quantile [this p]
+  (quantile [_ p]
     (+ location (* scale (tan (* PI (- p 0.5))))))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))
@@ -557,15 +557,15 @@
 (deftype ^:no-doc LogNormal
   [mu sd]
   p/PRandomVariable
-  (sample-1 [this rng]
+  (sample-1 [_ rng]
     (exp (+ (* (rand-normal rng) sd) mu)))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PQuantile
-  (cdf [this x]
+  (cdf [_ x]
     (* 0.5 (+ 1 (erf (/ (- (log x) mu)
                            (sqrt (* 2 sd sd)))))))
-  (quantile [this p]
+  (quantile [_ p]
     (exp (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu)))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))
@@ -575,16 +575,16 @@
 (deftype ^:no-doc Pareto
   [scale shape]
   p/PRandomVariable
-  (sample-1 [this rng]
+  (sample-1 [_ rng]
     (/ scale (pow (rand-double rng) (/ 1 shape))))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PQuantile
-  (cdf [this x]
+  (cdf [_ x]
     (if (< scale x)
       (- 1 (pow (/ scale x) shape))
       0.0))
-  (quantile [this p]
+  (quantile [_ p]
     (/ scale (pow (- 1 p) (/ 1 shape))))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))

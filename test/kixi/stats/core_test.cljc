@@ -1,20 +1,14 @@
 (ns kixi.stats.core-test
-  (:require [clojure.test.check :as tc]
+  (:require [clojure.test :refer-macros [is deftest]]
+            [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :refer [for-all]]
             [kixi.stats.core :as kixi]
             [kixi.stats.estimate :as estimate]
             [kixi.stats.test :refer [simple-z-test z-test p-value]]
             [kixi.stats.test-helpers :as t :refer [=ish approx= numeric]]
             [kixi.stats.math :refer [sq pow sqrt root]]
-            [kixi.stats.protocols :as p]
-            #?@(:cljs
-                [[clojure.test.check.clojure-test :refer-macros [defspec]]
-                 [clojure.test.check.properties :refer-macros [for-all]]
-                 [cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test.check.clojure-test :refer [defspec]]
-                 [clojure.test.check.properties :refer [for-all]]
-                 [clojure.test :refer [is deftest]]])))
+            [kixi.stats.protocols :as p]))
 
 (def test-opts {:num-tests 100
                 :par       4})
@@ -84,14 +78,14 @@
       nil
       (let [mean-x (mean' (map fx coll'))
             mean-y (mean' (map fy coll'))
-            c (count coll')]
-        (let [c' (dec c)]
-          (if (pos? c')
-            (/ (reduce + (map #(* (- (fx %) mean-x)
-                                  (- (fy %) mean-y))
-                              coll'))
-               c')
-            0))))))
+            c (count coll')
+            c' (dec c)]
+        (if (pos? c')
+          (/ (reduce + (map #(* (- (fx %) mean-x)
+                                (- (fy %) mean-y))
+                            coll'))
+             c')
+          0)))))
 
 (defn pcovariance'
   [fx fy coll]
@@ -117,8 +111,8 @@
    [:z :y] (covariance' :z :y coll)})
 
 (defn correlation'
-  [fx fy coll]
   "http://mathworld.wolfram.com/CorrelationCoefficient.html"
+  [fx fy coll]
   (let [coll' (filter fx (filter fy coll))]
     (when-not (empty? coll')
       (let [xs (map fx coll')
@@ -126,16 +120,15 @@
             mx (mean' xs)
             my (mean' ys)
             mxs (map #(- % mx) xs)
-            mys (map #(- % my) ys)]
-        (let [d (sqrt (* (reduce + (map * mxs mxs))
-                         (reduce + (map * mys mys))))]
-          (when-not (zero? d)
-            (/ (reduce + (map * mxs mys)) d)))))))
+            mys (map #(- % my) ys)
+            d (sqrt (* (reduce + (map * mxs mxs))
+                       (reduce + (map * mys mys))))]
+        (when-not (zero? d)
+          (/ (reduce + (map * mxs mys)) d))))))
 
 (defn r-squared'
   [fy-hat fy coll]
   (let [coll' (filter fy-hat (filter fy coll))
-        n (count coll')
         m (mean' (map fy coll'))
         fe (fn [x] (- (fy x) (fy-hat x)))
         vare (apply + (map (comp sq fe) coll'))
