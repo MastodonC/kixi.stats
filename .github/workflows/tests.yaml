@@ -18,7 +18,7 @@ jobs:
       - name: Setup Clojure tools
         uses: DeLaGuardo/setup-clojure@master
         with:
-          leiningen: latest
+          lein: latest
 
       - name: Checkout repository
         uses: actions/checkout@v2
