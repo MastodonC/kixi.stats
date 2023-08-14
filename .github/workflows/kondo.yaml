@@ -28,4 +28,4 @@ jobs:
         run: clj-kondo --lint "$(lein classpath)" --dependencies
 
       - name: Lint project files
-        run: clj-kondo --lint src test '{:output {:pattern "::{{level}} file={{filename}},line={{row}},col={{col}}::{{message}}"}}'
+        run: clj-kondo --lint src test --config '{:output {:pattern "::{{level}} file={{filename}},line={{row}},col={{col}}::{{message}}"}}'
