@@ -1,0 +1,36 @@
+name: Clojure CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Clojure tools
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          leiningen: latest
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Cache m2
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: m2-${{ hashFiles('project.clj') }}
+
+      - name: Prepare dependencies
+        run: lein deps
+
+      - name: Run Clojure tests
+        run: lein test
