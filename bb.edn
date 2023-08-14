@@ -19,10 +19,10 @@
    :doc "Lint dependencies."
    :task (kondo/run!
           {:lint [(with-out-str
-                    (babashka.tasks/clojure "-Spath -A:nextjournal/clerk"))]
+                    (babashka.tasks/clojure "-Spath -A:dev:test"))]
            :dependencies true})}
 
   lint
   {:doc "Lint source-containing directories with clj-kondo."
    :task (exec 'clj-kondo.core/exec)
-   :exec-args {:lint ["src" "dev" "test" "examples"]}}}}
+   :exec-args {:lint ["src" "test"]}}}}
