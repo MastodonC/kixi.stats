@@ -13,7 +13,7 @@
      :cljs (or (nil? x) (js/isFinite x))))
 
 (def numeric
-  (gen/such-that finite? (gen/one-of [gen/int gen/double (gen/return nil)])))
+  (gen/such-that finite? (gen/one-of [gen/small-integer gen/double (gen/return nil)])))
 
 (defn seq= [f]
   (fn [x y]

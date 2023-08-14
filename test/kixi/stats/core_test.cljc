@@ -399,7 +399,7 @@
 
 (defspec skewness-spec
   test-opts
-  (for-all [xs (gen/vector gen/int)]
+  (for-all [xs (gen/vector gen/small-integer)]
     (is (=ish (transduce identity kixi/skewness-s xs)
               (skewness' xs)))))
 
@@ -410,7 +410,7 @@
 
 (defspec pskewness-spec
   test-opts
-  (for-all [xs (gen/vector gen/int)]
+  (for-all [xs (gen/vector gen/small-integer)]
     (is (=ish (transduce identity kixi/skewness-p xs)
               (pskewness' xs)))))
 
@@ -421,7 +421,7 @@
 
 (defspec kurtosis-spec
   test-opts
-  (for-all [xs (gen/vector gen/int)]
+  (for-all [xs (gen/vector gen/small-integer)]
     (is (=ish (transduce identity kixi/kurtosis-s xs)
               (kurtosis' xs)))))
 
@@ -434,7 +434,7 @@
 
 (defspec pkurtosis-spec
   test-opts
-  (for-all [xs (gen/vector gen/int)]
+  (for-all [xs (gen/vector gen/small-integer)]
     (is (=ish (transduce identity kixi/kurtosis-p xs)
               (pkurtosis' xs)))))
 
@@ -446,7 +446,7 @@
 (defspec covariance-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute covariance
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
     (is (=ish (transduce identity (kixi/covariance :x :y) coll)
               (covariance' :x :y coll)))))
 
@@ -457,7 +457,7 @@
 (defspec pcovariance-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute covariance
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
     (is (=ish (transduce identity (kixi/covariance-p :x :y) coll)
               (pcovariance' :x :y coll)))))
 
@@ -468,14 +468,14 @@
 (defspec covariance-matrix-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/small-integer))]
     (is (=ish (transduce identity (kixi/covariance-matrix {:x :x :y :y :z :z}) coll)
               (covariance-matrix' coll)))))
 
 (defspec correlation-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
     (is (=ish (transduce identity (kixi/correlation :x :y) coll)
               (correlation' :x :y coll)))))
 
@@ -485,7 +485,7 @@
 
 (defspec r-squared-spec
   test-opts
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
     (is (=ish (transduce identity (kixi/r-squared :x :y) coll)
               (r-squared' :x :y coll)))))
@@ -505,34 +505,34 @@
 
 (defspec mse-spec
   test-opts
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
     (is (=ish (transduce identity (kixi/mse :x :y) coll)
               (mse' :x :y coll)))))
 
 (defspec rmse-spec
   test-opts
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
     (is (=ish (transduce identity (kixi/rmse :x :y) coll)
               (some-> (mse' :x :y coll) sqrt)))))
 
 (defspec cramers-v-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
      (is (=ish (transduce identity (kixi/cramers-v :x :y) coll)
                (cramers-v' :x :y coll)))))
 
 (defspec correlation-matrix-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute correlation matrix
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y :z]) gen/small-integer))]
     (is (=ish (transduce identity (kixi/correlation-matrix {:x :x :y :y :z :z}) coll)
               (correlation-matrix' coll)))))
 
 (defspec simple-linear-regression-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))]
     (is (=ish (some-> (transduce identity (kixi/simple-linear-regression :x :y) coll) p/parameters)
               (simple-linear-regression' :x :y coll)))))
 
@@ -543,8 +543,8 @@
 (defspec sum-squares-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
-            x gen/int]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))
+            x gen/small-integer]
     (is (= (estimate/regression-standard-error
             (transduce identity (kixi/sum-squares :x :y) coll) x)
            (transduce identity (kixi/regression-standard-error :x :y x) coll)))
@@ -555,16 +555,16 @@
 (defspec standard-error-estimate-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
-            x gen/int]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))
+            x gen/small-integer]
     (is (=ish (transduce identity (kixi/regression-standard-error :x :y x) coll)
               (standard-error-estimate' :x :y x coll)))))
 
 (defspec standard-error-prediction-spec
   test-opts
   ;; Take maps like {}, {:x 1}, {:x 2 :y 3} and compute linear least-squares
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
-            x gen/int]
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))
+            x gen/small-integer]
     (is (=ish (transduce identity (kixi/regression-prediction-standard-error :x :y x) coll)
               (standard-error-prediction' :x :y x coll)))))
 
@@ -586,9 +586,9 @@
 
 (defspec simple-z-test-plugin-spec
   test-opts
-  (for-all [coll (gen/vector gen/int 2 100)
+  (for-all [coll (gen/vector gen/small-integer 2 100)
             alternate (gen/elements [:<> :> :<])
-            x gen/int]
+            x gen/small-integer]
     (is (=ish (some-> (transduce identity (kixi/simple-z-test {:mu x}) coll)
                       (p-value alternate))
               (some-> (simple-z-test {:mu x :sd (sqrt (variance' coll))}
@@ -597,10 +597,10 @@
 
 (defspec simple-z-test-spec
   test-opts
-  (for-all [coll (gen/vector gen/int 2 100)
+  (for-all [coll (gen/vector gen/small-integer 2 100)
             alternate (gen/elements [:<> :> :<])
-            sd gen/pos-int
-            x gen/int]
+            sd gen/nat
+            x gen/small-integer]
     (is (=ish (some-> (transduce identity (kixi/simple-z-test {:mu x :sd sd}) coll)
                       (p-value alternate))
               (some-> (simple-z-test {:mu x :sd sd}
@@ -609,7 +609,7 @@
 
 (defspec z-test-test
   test-opts
-  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/int))
+  (for-all [coll (gen/vector (gen/map (gen/elements [:x :y]) gen/small-integer))
             alternate (gen/elements [:<> :> :<])]
     (is (=ish (some-> (transduce identity (kixi/z-test :x :y) coll)
                       (p-value alternate))
