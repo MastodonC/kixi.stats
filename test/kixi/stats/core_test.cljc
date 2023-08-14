@@ -1,5 +1,5 @@
 (ns kixi.stats.core-test
-  (:require [clojure.test :refer-macros [is deftest]]
+  (:require [clojure.test :refer [is deftest]]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :refer [for-all]]
