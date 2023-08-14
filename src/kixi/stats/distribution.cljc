@@ -135,34 +135,50 @@
       :else (rand-binomial-btrd n p rng))))
 
 (defn ^:no-doc rand-gamma
-  [k rng]
-  (let [k' (cond-> k (< 1) inc)
-        a1 (- k' (/ 1 3))
-        a2 (/ 1 (sqrt (* 9 a1)))
+  "Returns a random variate generated from a Gamma distribution with shape
+  parameter `alpha`, internally using `rng` to generate random normal and
+  uniform variates.
+
+  The variate is generated using Marsaglia's transformation-rejection method
+  described in [\"A simple method for generating Gamma
+  variables\"](https://dl.acm.org/doi/10.1145/358407.358414), page 369.
+
+  ### References
+
+  - [Wikipedia section on random variate generation](https://en.wikipedia.org/wiki/Gamma_distribution#Random_variate_generation)"
+  [alpha rng]
+  (let [;; First part of the correction for $alpha < 1$, described on p371 of
+        ;; the paper.
+        alpha' (if (< alpha 1) (inc alpha) alpha)
+        d (- alpha' (/ 1.0 3.0))
+        c (/ 1.0 (sqrt (* 9.0 d)))
         [r1 r2] (split rng)
-        [v u] (loop [rng r1]
-                (let [[r1 r2] (split rng)
-                      [x v] (loop [rng r2]
-                              (let [x (rand-normal rng)
-                                    v (+ 1 (* a2 x))]
-                                (if (<= v 0)
-                                  (recur (next-rng rng))
-                                  [x v])))
-                      v (* v v v)
-                      u (rand-double r1)]
-                  (if (and (> u (- 1 (* 0.331 (pow x 4))))
-                           (> (log u) (+ (* 0.5 x x)
-                                         (* a1 (+ 1 (- v) (log v))))))
-                    (recur (next-rng r1))
-                    [v u])))]
-    (if (= k k')
-      (* a1 v)
+        v (loop [rng r1]
+            (let [[r1 r2] (split rng)
+                  [x v]   (loop [rng r2]
+                            (let [x (rand-normal rng)
+                                  v (inc (* c x))]
+                              (if (pos? v)
+                                [x v]
+                                (recur (next-rng rng)))))
+                  v    (* v (* v v))
+                  u    (rand-double r1)
+                  x**2 (* x x)]
+              (if (or (< u (- 1.0 (* 0.331 (* x**2 x**2))))
+                      (< (log u) (+ (* 0.5 x**2)
+                                    (* d (+ (- 1.0 v) (log v))))))
+                v
+                (recur (next-rng r1)))))]
+    (if (= alpha alpha')
+      (* d v)
+      ;; Correction for $alpha < 1$, described on p371 of the paper.
       (* (pow (loop [rng r2]
                 (let [r (rand-double rng)]
-                  (if (> r 0) r
-                      (recur (next-rng rng)))))
-              (/ 1 k))
-         a1 v))))
+                  (if (pos? r)
+                    r
+                    (recur (next-rng rng)))))
+              (/ 1.0 alpha))
+         d v))))
 
 (defn ^:no-doc rand-beta
   [alpha beta rng]
