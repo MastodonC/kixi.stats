@@ -1,11 +1,9 @@
 {
   "devDependencies": {
-    "gh-pages": "^3.2.3",
     "shadow-cljs": "2.25.2",
     "source-map-support": "^0.5.21"
   },
   "scripts": {
-    "test": "shadow-cljs compile test && node target/main/node-tests.js;",
-    "gh-pages": "gh-pages -d public/build --dotfiles true"
+    "test": "shadow-cljs compile test && node target/main/node-tests.js;"
   }
 }

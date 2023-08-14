@@ -13,5 +13,6 @@ pom.xml.asc
 .clj-kondo/
 .lsp/
 !template/pom.xml
+public/
 node_modules
 **.shadow-cljs
