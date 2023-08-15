@@ -6,10 +6,8 @@ A Clojure/ClojureScript library of statistical sampling and transducing function
 
 [![Build Status][build-status]][build-status-url]
 [![License][license]][license-url]
-[![Codecov branch][codecov]][codecov-url]
 [![cljdoc badge][cljdoc]][cljdoc-url]
 [![Clojars Project][clojars]][clojars-url]
-[![Discord Shield][discord]][discord-url]
 
 </div>
 
@@ -321,10 +319,10 @@ Copyright © 2018 Mastodon C Ltd
 Distributed under the Eclipse Public License version 1.0.
 
 [build-status-url]: https://github.com/MastodonC/kixi.stats/actions?query=workflow%3A%22Clojure+CI%22
-[build-status]: https://github.com/MastodonC/kixi.stats/workflows/Clojure%20CI/badge.svg?branch=main
+[build-status]: https://github.com/MastodonC/kixi.stats/workflows/Clojure%20CI/badge.svg?branch=master
 [license-url]: LICENSE
-[license]: https://img.shields.io/badge/license-GPLv3-brightgreen.svg
-[cljdoc-url]: https://cljdoc.org/d/MastodonC/kixi.stats/CURRENT
-[cljdoc]: https://cljdoc.org/badge/MastodonC/kixi.stats
-[clojars-url]: https://clojars.org/MastodonC/kixi.stats
-[clojars]: https://img.shields.io/clojars/v/MastodonC/kixi.stats.svg
+[license]: https://img.shields.io/badge/license-EPLv1-brightgreen.svg
+[cljdoc-url]: https://cljdoc.org/d/kixi/stats/CURRENT
+[cljdoc]: https://cljdoc.org/badge/kixi/stats
+[clojars-url]: https://clojars.org/kixi/stats
+[clojars]: https://img.shields.io/clojars/v/kixi/stats.svg
