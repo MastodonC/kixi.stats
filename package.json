@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "shadow-cljs": "2.25.2",
+    "source-map-support": "^0.5.21"
+  },
+  "scripts": {
+    "test": "shadow-cljs compile test && node target/main/node-tests.js;"
+  }
+}

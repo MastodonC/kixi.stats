@@ -1,18 +1,17 @@
 (ns kixi.stats.distribution-test
-  (:require [kixi.stats.distribution :as sut]
-            [kixi.stats.core :as kixi]
-            [kixi.stats.math :refer [gamma exp log equal]]
+  (:require [clojure.test :refer [is]]
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.properties :as prop :refer [for-all]]
+            [kixi.stats.distribution :as sut]
+            #?(:clj [kixi.stats.core :as kixi])
+            [kixi.stats.math :refer [gamma exp equal]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check]
-            [kixi.stats.test-helpers :refer [=ish numeric cdf' quantile']]
-            #?@(:cljs
-                [[clojure.test.check.clojure-test :refer-macros [defspec]]
-                 [clojure.test.check.properties :as prop :refer-macros [for-all]]
-                 [cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test.check.clojure-test :refer [defspec]]
-                 [clojure.test.check.properties :as prop :refer [for-all]]
-                 [clojure.test :refer [is deftest]]])))
+            [kixi.stats.test-helpers :refer #?(:clj  [=ish numeric cdf' quantile']
+                                               :cljs [=ish])]))
+
+(def gen-s-pos-int
+  (gen/fmap inc gen/nat))
 
 (def test-opts
   {:num-tests 100
@@ -30,13 +29,13 @@
 
 (def gen-two-ascending-ints
   "Generate two ints a and b such that a < b."
-  (->> (gen/tuple gen/int gen/int)
+  (->> (gen/tuple gen/small-integer gen/small-integer)
        (gen/such-that (fn [[a b]] (not= a b)))
        (gen/fmap sort)))
 
 (def gen-alphas
   "Returns a vector of alphas"
-  (gen/vector gen/s-pos-int 1 100))
+  (gen/vector gen-s-pos-int 1 100))
 
 (def gen-probabilities
   "Returns a vector of probabilities which sum to 1.0"
@@ -132,15 +131,15 @@
 
 (defspec seeded-draws-are-deterministic
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             [a b] gen-two-ascending-ints
             r gen-rate
             s gen-shape
             p gen-probability
             alpha gen-pos-real
             beta gen-pos-real
-            k gen/s-pos-int
-            d gen/s-pos-int
+            k gen-s-pos-int
+            d gen-s-pos-int
             n gen/nat
             [ks ps] gen-categories]
     (is (= (sut/draw (sut/uniform {:a a :b b}) {:seed seed})
@@ -178,15 +177,15 @@
 
 (defspec seeded-samples-are-deterministic
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             [a b] gen-two-ascending-ints
             r gen-rate
             s gen-shape
             p gen-probability
             alpha gen-pos-real
             beta gen-pos-real
-            k gen/s-pos-int
-            d gen/s-pos-int
+            k gen-s-pos-int
+            d gen-s-pos-int
             n gen/nat
             [ks ps] gen-categories]
     (is (= (sut/sample n (sut/uniform {:a a :b b}) {:seed seed})
@@ -226,7 +225,7 @@
   [mean]
   (fn
     ([] [0 0 0])
-    ([[n m ss :as acc] e]
+    ([[n m ss] e]
      (let [n' (inc n)
            m' (+ m (/ (- e m) n'))
            ss (+ ss (* (- e m') (- e m)))
@@ -247,11 +246,11 @@
      (let [acc (mapv #(if (reduced? %2)
                         %2
                         (%1 %2 %3)) rfs acc e)
-           [done run res] (reduce (fn [[done run res] x]
-                                    (if (reduced? x)
-                                      [(inc done) run (conj res (unreduced x))]
-                                      [done (inc run) res]))
-                                  [0 0 []] acc)]
+           [_done run res] (reduce (fn [[done run res] x]
+                                     (if (reduced? x)
+                                       [(inc done) run (conj res (unreduced x))]
+                                       [done (inc run) res]))
+                                   [0 0 []] acc)]
        (if (or (zero? run)
                (and (= run 1) (every? true? res)))
          (reduced (mapv #(if (reduced? %1)
@@ -272,7 +271,7 @@
 
 (defspec sample-means-converge-to-parameter
   {:num-tests 1 :par 4}
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             [a b] gen-two-ascending-ints
             r gen-rate
             s gen-shape
@@ -281,7 +280,7 @@
             alpha gen-pos-real
             beta gen-pos-real
             n gen/nat
-            k gen/s-pos-int
+            k gen-s-pos-int
             d gen-dof
             small-n gen-small-n]
     (is (converges-to-mean? (+ a (/ (- b a) 2))
@@ -318,7 +317,7 @@
 
 (defspec sample-summary-returns-categorical-sample-frequencies
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             p gen-probability
             n gen/nat
             [ks ps] gen-categories]
@@ -334,52 +333,52 @@
 
 (defspec uniform-does-not-exceed-bounds
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             [a b] gen-two-ascending-ints]
     (let [draw (sut/draw (sut/uniform {:a a :b b}) {:seed seed})]
       (is (and (<= a draw) (< draw b))))))
 
 (defspec exponential-returns-positive-floats
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             r gen-rate]
     (is (float? (sut/draw (sut/exponential {:rate r}) {:seed seed})))
     (is (pos? (sut/draw (sut/exponential {:rate r}) {:seed seed})))))
 
 (defspec bournoulli-returns-boolean
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             p gen-probability]
     (is (contains? #{true false} (sut/draw (sut/bernoulli {:p p}) {:seed seed})))))
 
 (defspec binomial-returns-integers
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             n gen/nat
             p gen-probability]
     (is (integer? (sut/draw (sut/binomial {:n n :p p}) {:seed seed})))))
 
 (defspec categorical-returns-supplied-categories
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             [ks ps] gen-categories]
     (is (contains? (set ks) (sut/draw (sut/categorical (zipmap ks ps)) {:seed seed})))))
 
 (defspec bernoulli-probabilities-are-well-behaved
   test-opts
-  (for-all [seed gen/int]
+  (for-all [seed gen/small-integer]
     (is (false? (sut/draw (sut/bernoulli {:p 0.0}) {:seed seed})))
     (is (true? (sut/draw (sut/bernoulli {:p 1.0}) {:seed seed})))))
 
 (defspec multinomial-sample-sums-to-n
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             n gen-small-n
             probs gen-probabilities]
     (is (= n (apply + (sut/draw (sut/multinomial {:n n :probs probs}) {:seed seed}))))))
 
 (defspec dirichlet-sample-sums-to-1
   test-opts
-  (for-all [seed gen/int
+  (for-all [seed gen/small-integer
             as gen-alphas]
     (is (equal 1.0 (apply + (sut/draw (sut/dirichlet {:alphas as}) {:seed seed})) 1e-15))))

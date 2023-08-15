@@ -10,5 +10,11 @@ pom.xml.asc
 .hgignore
 .hg/
 /out
-.clj-kondo/
+.clj-kondo/.lock
+.clj-kondo/inline-configs
+.clj-kondo/.cache
 .lsp/
+!template/pom.xml
+public/
+node_modules
+**.shadow-cljs

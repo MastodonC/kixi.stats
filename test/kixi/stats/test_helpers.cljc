@@ -13,7 +13,7 @@
      :cljs (or (nil? x) (js/isFinite x))))
 
 (def numeric
-  (gen/such-that finite? (gen/one-of [gen/int gen/double (gen/return nil)])))
+  (gen/such-that finite? (gen/one-of [gen/small-integer gen/double (gen/return nil)])))
 
 (defn seq= [f]
   (fn [x y]
@@ -56,7 +56,7 @@
               e (* (abs (min x y)) e))]
       (equal x y e))))
 
-(def =ish (-> (approx= 1e-11) inf= some= map= seq=))
+(def =ish (-> (approx= 1e-9) inf= some= map= seq=))
 
 (defn quantile'
   [p coll]

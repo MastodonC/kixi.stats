@@ -1,0 +1,31 @@
+name: Linter
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install CLJ-Kondo
+        uses: DeLaGuardo/setup-clojure@master
+        with:
+          bb: latest
+
+      - name: Cache kondo directory
+        uses: actions/cache@v2
+        with:
+          path: ~/.clj-kondo/.cache
+          key: ${{ runner.os }}-kondo
+          restore-keys: ${{ runner.os }}-kondo
+
+      - name: Lint dependencies
+        run: bb lint-deps
+
+      - name: Lint project files
+        run: bb lint --config '{:output {:pattern "::{{level}} file={{filename}},line={{row}},col={{col}}::{{message}}"}}'

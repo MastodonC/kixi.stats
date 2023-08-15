@@ -1,12 +1,9 @@
 (ns kixi.stats.test-test
-  (:require [kixi.stats.test :as sut]
+  (:require [clojure.test :refer [is deftest]]
+            [kixi.stats.test :as sut]
             [kixi.stats.core :refer [cross-tabulate]]
             [kixi.stats.distribution :as dist]
-            [kixi.stats.test-helpers :refer [=ish]]
-            #?@(:cljs
-                [[cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test :refer [is deftest]]])))
+            [kixi.stats.test-helpers :refer [=ish]]))
 
 (deftest chi-squared-test-test
   (let [xtab (transduce identity (cross-tabulate :x :y)

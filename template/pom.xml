@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>kixi</groupId>
+    <artifactId>stats</artifactId>
+    <name>stats</name>
+    <description>A library of statistical distribution sampling and transducing functions</description>
+    <url>https://github.com/MastodonC/stats</url>
+    <licenses>
+        <license>
+            <name>Eclipse Public License</name>
+            <url>https://www.eclipse.org/legal/epl-v10.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <url>https://github.com/MastodonC/stats</url>
+        <connection>scm:git:git://github.com/MastodonC/stats.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/MastodonC/stats.git</developerConnection>
+    </scm>
+</project>

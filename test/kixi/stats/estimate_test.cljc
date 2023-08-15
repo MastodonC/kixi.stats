@@ -1,18 +1,12 @@
 (ns kixi.stats.estimate-test
-  (:require [kixi.stats.estimate :as sut]
+  (:require [clojure.test :refer [is deftest]]
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.properties :as prop :refer [for-all]]
+            [clojure.test.check.generators :as gen]
+            [kixi.stats.estimate :as sut]
             [kixi.stats.digest :as digest]
             [kixi.stats.protocols :as p]
-            [clojure.test.check.generators :as gen]
-            [clojure.test.check]
-            [kixi.stats.test-helpers :refer [=ish approx= seq= numeric]]
-            #?@(:cljs
-                [[clojure.test.check.clojure-test :refer-macros [defspec]]
-                 [clojure.test.check.properties :as prop :refer-macros [for-all]]
-                 [cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test.check.clojure-test :refer [defspec]]
-                 [clojure.test.check.properties :as prop :refer [for-all]]
-                 [clojure.test :refer [is deftest]]])))
+            [kixi.stats.test-helpers :refer [=ish approx= seq=]]))
 
 (def test-opts
   {:num-tests 100})
@@ -76,8 +70,7 @@
         sum-squares (transduce identity (digest/sum-squares first last) (map vector xs ys))
         model (sut/simple-linear-regression sum-squares)
         ci (sut/regression-confidence-interval sum-squares 10 alpha)
-        ci-pred (sut/regression-prediction-interval sum-squares 10 alpha)
-        ci-intercept (sut/regression-confidence-interval sum-squares 0 alpha)]
+        ci-pred (sut/regression-prediction-interval sum-squares 10 alpha)]
     (is (=ish (p/lower ci) 4.259205192881628))
     (is (=ish (p/upper ci) 4.798485908111156))
     (is (=ish (p/lower ci-pred) 2.4589104495031533))
