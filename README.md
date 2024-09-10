@@ -87,7 +87,7 @@ Add the following dependency:
 [kixi.stats.core](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/core.cljc) contains statistical reducing functions that can be used with `transduce`:
 
 ```clojure
-(require '[kixi.stats.core :refer [standard-deviation correlation])
+(require '[kixi.stats.core :refer [standard-deviation correlation]])
 
 (->> [{:x 2} {:x 4} {:x 4} {:x 4} {:x 5} {:x 5} {:x 5} {:x 7} {:x 9}]
      (transduce (map :x) standard-deviation))
