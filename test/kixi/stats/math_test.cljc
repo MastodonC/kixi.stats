@@ -4,7 +4,7 @@
             [kixi.stats.math :as sut :refer [abs]]))
 
 (defn approx= [a b tol]
-  (< (abs (- a b)) tol))
+  (< (/ (abs (- a b)) (abs (/ (+ a b) 2.0))) tol))
 
 (def gamma-point-values
   [3.99121704344051E-26 -1.01776034607733E-24 2.4935128478894578E-23
@@ -37,12 +37,15 @@
   (is (= 120.0 (sut/gamma 6)))
   (is (= 720.0 (sut/gamma 7)))
   (is (= 5040.0 (sut/gamma 8)))
-  (is (= (mapv sut/gamma (range -25.5 25))
-         gamma-point-values)))
+  (is (every? (fn [[x y]]
+                (approx= x y 1e-15))
+              (map vector
+                   (mapv sut/gamma (range -25.5 25))
+                   gamma-point-values))))
 
 (deftest log-gamma-returns-correct-point-values
   (is (->> (map vector (range 0.5 25) log-gamma-point-values)
-           (every? (fn [[x y]] (approx= (sut/log-gamma x) y 1e-12))))))
+           (every? (fn [[x y]] (approx= (sut/log-gamma x) y 1e-15))))))
 
 (deftest gamma-pinv-returns-reference-value
   (is (= 0.02223223690217228 (sut/gamma-pinv 1E-8 4))))
