@@ -40,4 +40,4 @@ jobs:
         run: clojure -T:build publish
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
-          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_TOKEN }}
