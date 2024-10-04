@@ -1,4 +1,5 @@
 (ns kixi.stats.test
+  (:refer-clojure :exclude [abs])
   (:require [kixi.stats.distribution :as d]
             [kixi.stats.math :refer [abs clamp pow sq sqrt]]
             [kixi.stats.protocols :as p]
@@ -11,15 +12,15 @@
   p/PTestResult
   (p-value [this]
     (p-value this h1))
-  (p-value [this alternate]
+  (p-value [_ alternate]
     (when (and statistic distribution alternate)
       (case alternate
         :<> (clamp (* 2 (d/cdf distribution (- (abs statistic)))) 0.0 1.0)
         :<  (d/cdf distribution statistic)
         :>  (- 1 (d/cdf distribution statistic)))))
   (significant? [this alpha]
-    (significant? [this alpha h1]))
-  (significant? [this alpha alternate]
+    (significant? this alpha h1))
+  (significant? [_ alpha alternate]
     (when (and statistic distribution alpha alternate)
       (let [critical (d/critical-value distribution alpha alternate)]
         (case alternate
@@ -35,6 +36,7 @@
 
 (defn chi-squared-test
   "Calculates the X^2 test of independence for a given contingency table.
+  Returns a reified kixi.stats.protocols/PTestResult.
   See kixi.stats.core/cross-tabulate"
   [^kixi.stats.protocols.PContingencyTable table]
   (let [margins (p/margin-totals table)
@@ -57,6 +59,7 @@
   sd: the population standard deviation
   mean: the sample mean
   n: the sample size
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/simple-z-test"
   [{:keys [mu sd]} {:keys [mean n]}]
   (when (and (pos? n) (pos? sd))
@@ -66,6 +69,7 @@
 (defn z-test
   "Calculates the z-test of statistical significance between two sample means.
   Requires the mean, sd and sample size (n) of both samples.
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/z-test"
   [{mean-x :mean sd-x :sd n-x :n}
    {mean-y :mean sd-y :sd n-y :n}]
@@ -81,6 +85,7 @@
 (defn t-test
   "Calculates Welch's unequal variances t-test of statistical significance.
   Requires the mean, sd and sample size (n) of both samples.
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/t-test"
   [{mean-a :mean sd-a :sd n-a :n}
    {mean-b :mean sd-b :sd n-b :n}]
@@ -96,13 +101,14 @@
                        (/ (pow sd-b 4) (* n-b n-b (dec n-b))))))]
     (when (and t dof)
       (test-result t (d/t {:v dof})))))
- 
+
 (defn simple-t-test
   "Calculates the t-test of statistical significance for a sample mean.
   mu: the population mean
   sd: the population standard deviation
   mean: the sample mean
   n: the sample size
+  Returns a reified kixi.stats.protocols/PTestResult.
   See also: kixi.stats.core/simple-t-test"
   [{:keys [mu sd]} {:keys [mean n]}]
   (let [dof (dec n)

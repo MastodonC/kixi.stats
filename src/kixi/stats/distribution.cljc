@@ -1,8 +1,13 @@
 (ns kixi.stats.distribution
-  (:refer-clojure :exclude [shuffle rand-int])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos sin tan atan PI log-gamma sq floor erf erfcinv] :as m]
+  (:refer-clojure :exclude [shuffle rand-int abs])
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos tan atan PI sq floor erf erfcinv] :as m]
             [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
-            [clojure.test.check.random :refer [make-random rand-double rand-long split split-n]]))
+            [clojure.test.check.random :refer [make-random rand-double split split-n]]))
+
+;;;; Assert helpers
+
+(def ^:no-doc non-neg?
+  (complement neg?))
 
 ;;;; Randomness helpers
 
@@ -130,34 +135,50 @@
       :else (rand-binomial-btrd n p rng))))
 
 (defn ^:no-doc rand-gamma
-  [k rng]
-  (let [k' (cond-> k (< 1) inc)
-        a1 (- k' (/ 1 3))
-        a2 (/ 1 (sqrt (* 9 a1)))
+  "Returns a random variate generated from a Gamma distribution with shape
+  parameter `alpha`, internally using `rng` to generate random normal and
+  uniform variates.
+
+  The variate is generated using Marsaglia's transformation-rejection method
+  described in [\"A simple method for generating Gamma
+  variables\"](https://dl.acm.org/doi/10.1145/358407.358414), page 369.
+
+  ### References
+
+  - [Wikipedia section on random variate generation](https://en.wikipedia.org/wiki/Gamma_distribution#Random_variate_generation)"
+  [alpha rng]
+  (let [;; First part of the correction for $alpha < 1$, described on p371 of
+        ;; the paper.
+        alpha' (if (< alpha 1) (inc alpha) alpha)
+        d (- alpha' (/ 1.0 3.0))
+        c (/ 1.0 (sqrt (* 9.0 d)))
         [r1 r2] (split rng)
-        [v u] (loop [rng r1]
-                (let [[r1 r2] (split rng)
-                      [x v] (loop [rng r2]
-                              (let [x (rand-normal rng)
-                                    v (+ 1 (* a2 x))]
-                                (if (<= v 0)
-                                  (recur (next-rng rng))
-                                  [x v])))
-                      v (* v v v)
-                      u (rand-double r1)]
-                  (if (and (> u (- 1 (* 0.331 (pow x 4))))
-                           (> (log u) (+ (* 0.5 x x)
-                                         (* a1 (+ 1 (- v) (log v))))))
-                    (recur (next-rng r1))
-                    [v u])))]
-    (if (= k k')
-      (* a1 v)
+        v (loop [rng r1]
+            (let [[r1 r2] (split rng)
+                  [x v]   (loop [rng r2]
+                            (let [x (rand-normal rng)
+                                  v (inc (* c x))]
+                              (if (pos? v)
+                                [x v]
+                                (recur (next-rng rng)))))
+                  v    (* v (* v v))
+                  u    (rand-double r1)
+                  x**2 (* x x)]
+              (if (or (< u (- 1.0 (* 0.331 (* x**2 x**2))))
+                      (< (log u) (+ (* 0.5 x**2)
+                                    (* d (+ (- 1.0 v) (log v))))))
+                v
+                (recur (next-rng r1)))))]
+    (if (= alpha alpha')
+      (* d v)
+      ;; Correction for $alpha < 1$, described on p371 of the paper.
       (* (pow (loop [rng r2]
                 (let [r (rand-double rng)]
-                  (if (> r 0) r
-                      (recur (next-rng rng)))))
-              (/ 1 k))
-         a1 v))))
+                  (if (pos? r)
+                    r
+                    (recur (next-rng rng)))))
+              (/ 1.0 alpha))
+         d v))))
 
 (defn ^:no-doc rand-beta
   [alpha beta rng]
@@ -239,10 +260,23 @@
 (deftype ^:no-doc Uniform
     [a b]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (+ (* (rand-double rng) (- b a)) a))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    p/PQuantile
+    (cdf [_ x]
+      (cond
+        (<= x a) 0.0
+        (>= x b) 1.0
+        :else
+        (/ (- x a) (- b a))))
+    (quantile [_ p]
+      (cond
+        (zero? p) a
+        (= p 1.0) b
+        :else
+        (+ a (* p (- b a)))))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
@@ -251,10 +285,15 @@
 (deftype ^:no-doc Exponential
     [rate]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (/ (- (log (rand-double rng))) rate))
     (sample-n [this n rng]
       (default-sample-n this n rng))
+    p/PQuantile
+    (cdf [_ x]
+      (- 1.0 (exp (- (* rate x)))))
+    (quantile [_ p]
+      (/ (- (log (- 1.0 p))) rate))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
         :cljs (ISeqable
@@ -263,7 +302,7 @@
 (deftype ^:no-doc Binomial
     [n p]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (rand-binomial n p rng))
     (sample-n [this n rng]
       (default-sample-n this n rng))
@@ -279,15 +318,15 @@
 (deftype ^:no-doc Bernoulli
     [p]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (< (rand-double rng) p))
-    (sample-n [this n rng]
+    (sample-n [_ n rng]
       (let [v (sample-1 (->Binomial n p) rng)]
         (-> (concat (repeat v true)
                     (repeat (- n v) false))
             (shuffle rng))))
     p/PDiscreteRandomVariable
-    (sample-frequencies [this n rng]
+    (sample-frequencies [_ n rng]
       (let [v (sample-1 (->Binomial n p) rng)]
         {true v false (- n v)}))
     #?@(:clj (clojure.lang.Seqable
@@ -298,15 +337,15 @@
 (deftype ^:no-doc Normal
     [mu sd]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (+ (* (rand-normal rng) sd) mu))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (* 0.5 (+ 1 (erf (/ (- x mu)
                           (sqrt (* 2 sd sd)))))))
-    (quantile [this p]
+    (quantile [_ p]
       (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
@@ -316,16 +355,16 @@
 (deftype ^:no-doc T
     [dof]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)]
         (* (rand-normal r1)
            (sqrt (/ dof (* 2 (rand-gamma (* 0.5 dof) r2)))))))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (cdf-t dof x))
-    (quantile [this p]
+    (quantile [_ p]
       (quantile-t dof p))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
@@ -335,7 +374,7 @@
 (deftype ^:no-doc Gamma
     [shape scale]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (* (rand-gamma shape rng) scale))
     (sample-n [this n rng]
       (default-sample-n this n rng))
@@ -347,7 +386,7 @@
 (deftype ^:no-doc Beta
     [alpha beta]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (rand-beta alpha beta rng))
     (sample-n [this n rng]
       (default-sample-n this n rng))
@@ -359,7 +398,7 @@
 (deftype ^:no-doc BetaBinomial
     [n alpha beta]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)
             p (rand-beta alpha beta r1)]
         (rand-binomial n p r2)))
@@ -373,14 +412,14 @@
 (deftype ^:no-doc ChiSquared
     [k]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (* (rand-gamma (/ k 2) rng) 2))
     (sample-n [this n rng]
       (default-sample-n this n rng))
     p/PQuantile
-    (cdf [this x]
+    (cdf [_ x]
       (m/lower-regularized-gamma (* 0.5 k) (* 0.5 x)))
-    (quantile [this p]
+    (quantile [_ p]
       (* 2.0 (m/gamma-pinv p (* 0.5 k))))
     #?@(:clj (clojure.lang.Seqable
               (seq [this] (sampleable->seq this)))
@@ -390,7 +429,7 @@
 (deftype ^:no-doc F
     [d1 d2]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)
             x1 (* (rand-gamma (/ d1 2) r1) 2)
             x2 (* (rand-gamma (/ d2 2) r2) 2)]
@@ -405,7 +444,7 @@
 (deftype ^:no-doc Poisson
     [lambda]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [l (exp (- lambda))]
         (loop [p 1 k 0 rng rng]
           (let [p (* p (rand-double rng))]
@@ -422,7 +461,7 @@
 (deftype ^:no-doc Weibull
     [shape scale]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (* (pow (- (log (rand-double rng)))
               (/ 1 shape))
          scale))
@@ -436,12 +475,12 @@
 (deftype ^:no-doc Categorical
     [ks ps]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (first (categorical-sample ks ps 1 rng)))
-    (sample-n [this n rng]
+    (sample-n [_ n rng]
       (shuffle (categorical-sample ks ps n rng) rng))
     p/PDiscreteRandomVariable
-    (sample-frequencies [this n rng]
+    (sample-frequencies [_ n rng]
       (loop [coll (transient {}) n n
              rem 1 rng rng
              ks ks ps ps]
@@ -461,7 +500,7 @@
 (deftype ^:no-doc Multinomial
     [n ps]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (loop [coll (transient []) n n
              rem 1 rng rng
              ps ps]
@@ -485,7 +524,7 @@
 (deftype ^:no-doc Dirichlet
     [as]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [rs (split-n rng (count as))
             xs (map #(rand-gamma %1 %2) as rs)
             s (apply + xs)]
@@ -500,7 +539,7 @@
 (deftype ^:no-doc DirichletMultinomial
     [n as]
     p/PRandomVariable
-    (sample-1 [this rng]
+    (sample-1 [_ rng]
       (let [[r1 r2] (split rng)
             ps (sample-1 (->Dirichlet as) r1)]
         (sample-1 (->Multinomial n ps) r2)))
@@ -517,14 +556,14 @@
 (deftype ^:no-doc Cauchy
   [location scale]
   p/PRandomVariable
-  (sample-1 [this rng]
+  (sample-1 [_ rng]
     (+ location (* scale (tan (* PI (- (rand-double rng) 0.5))))))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PQuantile
-  (cdf [this x]
+  (cdf [_ x]
     (+ 0.5 (/ (atan (/ (- x location) scale)) PI)))
-  (quantile [this p]
+  (quantile [_ p]
     (+ location (* scale (tan (* PI (- p 0.5))))))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))
@@ -534,15 +573,15 @@
 (deftype ^:no-doc LogNormal
   [mu sd]
   p/PRandomVariable
-  (sample-1 [this rng]
+  (sample-1 [_ rng]
     (exp (+ (* (rand-normal rng) sd) mu)))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PQuantile
-  (cdf [this x]
+  (cdf [_ x]
     (* 0.5 (+ 1 (erf (/ (- (log x) mu)
                            (sqrt (* 2 sd sd)))))))
-  (quantile [this p]
+  (quantile [_ p]
     (exp (+ (* -1.41421356237309505 sd (erfcinv (* 2 p))) mu)))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))
@@ -552,16 +591,16 @@
 (deftype ^:no-doc Pareto
   [scale shape]
   p/PRandomVariable
-  (sample-1 [this rng]
+  (sample-1 [_ rng]
     (/ scale (pow (rand-double rng) (/ 1 shape))))
   (sample-n [this n rng]
     (default-sample-n this n rng))
   p/PQuantile
-  (cdf [this x]
+  (cdf [_ x]
     (if (< scale x)
       (- 1 (pow (/ scale x) shape))
       0.0))
-  (quantile [this p]
+  (quantile [_ p]
     (/ scale (pow (- 1 p) (/ 1 shape))))
   #?@(:clj (clojure.lang.Seqable
             (seq [this] (sampleable->seq this)))
@@ -628,80 +667,98 @@
 
 (defn uniform
   "Returns a uniform distribution.
-  Params: {:a ∈ ℝ, :b ∈ ℝ}"
+  Params: {:a ∈ ℝ, :b ∈ ℝ, :a < :b}"
   [{:keys [a b]}]
+  (assert (< a b) (str "a (" a ") must be less than b (" b ")."))
   (->Uniform a b))
 
 (defn exponential
   "Returns an exponential distribution.
   Params: {:rate ∈ ℝ > 0}"
   [{:keys [rate]}]
+  (assert (pos? rate) (str "rate (" rate ") must be positive."))
   (->Exponential rate))
 
 (defn bernoulli
   "Returns a Bernoulli distribution.
   Params: {:p ∈ [0 1]}"
   [{:keys [p]}]
+  (assert (<= 0.0 p 1.0) (str "p (" p ") must be between 0.0 and 1.0."))
   (->Bernoulli p))
 
 (defn binomial
   "Return a binomial distribution.
   Params: {:n ∈ ℕ, :p ∈ [0 1]}"
   [{:keys [n p]}]
+  (assert (nat-int? n) (str "n (" n ") must be a natural number."))
+  (assert (<= 0.0 p 1.0) (str "p (" p ") must be between 0.0 and 1.0."))
   (->Binomial n p))
 
 (defn normal
   "Returns a normal distribution.
-  Params: {:location ∈ ℝ, :scale ∈ ℝ}"
+  Params: {:location ∈ ℝ, :scale ∈ ℝ > 0}"
   [{:keys [location scale mu sd]}]
+  (assert (pos? (or scale sd)) (str "scale/sd (" (or scale sd) ") must be positive."))
   (->Normal (or location mu) (or scale sd)))
 
 (defn t
   "Returns a t distribution.
-  Params: {:v ∈ ℕ > 0}"
+  Params: {:v ∈ ℝ > 0}"
   [{:keys [v]}]
+  (assert (pos? v) (str "v (" v ") must be positive."))
   (->T v))
 
 (defn gamma
   "Returns a gamma distribution.
-  Params: {:shape ∈ ℝ, :scale ∈ ℝ} or {:shape ∈ ℝ, :rate ∈ ℝ}"
+  Params: {:shape ∈ ℝ > 0, :scale ∈ ℝ > 0} or {:shape ∈ ℝ > 0, :rate ∈ ℝ > 0}"
   [{:keys [shape scale rate] :or {shape 1.0}}]
+  (assert (and (pos? shape) (pos? (or scale rate)))
+          (str "shape (" shape ") and scale/rate (" (or scale rate) ") must be positive."))
   (->Gamma shape (or scale (/ 1.0 rate))))
 
 (defn beta
   "Returns a beta distribution.
-  Params: {:alpha ∈ ℝ, :beta ∈ ℝ}"
+  Params: {:alpha ∈ ℝ > 0, :beta ∈ ℝ > 0}"
   [{:keys [alpha beta] :or {alpha 1.0 beta 1.0}}]
+  (assert (and (pos? alpha) (pos? beta)) (str "alpha (" alpha ") and beta (" beta ") must be positive."))
   (->Beta alpha beta))
 
 (defn beta-binomial
   "Returns a beta distribution.
   Params: {:n ∈ ℕ > 0, :alpha ∈ ℝ > 0, :beta ∈ ℝ > 0}"
   [{:keys [n alpha beta] :or {alpha 1.0 beta 1.0}}]
+  (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
+  (assert (and (pos? alpha) (pos? beta)) (str "alpha (" alpha ") and beta (" beta ") must be positive."))
   (->BetaBinomial n alpha beta))
 
 (defn weibull
   "Returns a weibull distribution.
   Params: {:shape ∈ ℝ >= 0, :scale ∈ ℝ >= 0}"
   [{:keys [shape scale] :or {shape 1.0 scale 1.0}}]
+  (assert (and (non-neg? shape) (non-neg? scale))
+          (str "shape (" shape ") and scale (" scale ") must not be negative."))
   (->Weibull shape scale))
 
 (defn chi-squared
   "Returns a chi-squared distribution.
   Params: {:k ∈ ℕ > 0}"
   [{:keys [k]}]
+  (assert (pos-int? k) (str "k (" k ") must be a positive integer."))
   (->ChiSquared k))
 
 (defn f
   "Returns an F distribution.
-  Params: {:d1 ∈ ℕ > 0, :d2 ∈ ℕ > 0}"
+  Params: {:d1 ∈ ℝ > 0, :d2 ∈ ℝ > 0}"
   [{:keys [d1 d2]}]
+  (assert (and (pos? d1) (pos? d2))
+          (str "d1 (" d1 ") and d2 (" d2 ") must be positive."))
   (->F d1 d2))
 
 (defn poisson
   "Returns a Poisson distribution.
   Params: {:lambda ∈ ℝ > 0}"
   [{:keys [lambda]}]
+  (assert (pos? lambda) (str "lambda (" lambda ") must be positive."))
   (->Poisson lambda))
 
 (defn categorical
@@ -710,6 +767,7 @@
   Probabilities should be >= 0 and sum to 1"
   [category-probs]
   (let [[ks ps] (apply map vector category-probs)]
+    (assert (every? #(<= 0.0 % 1.0) ps) "All the probabilities must be between 0.0 and 1.0.")
     (->Categorical ks ps)))
 
 (defn multinomial
@@ -717,33 +775,40 @@
   Params: {:n ∈ ℕ > 0, :probs [ℝ >= 0, ...]}
   Probabilities should be >= 0 and sum to 1"
   [{:keys [n probs]}]
+  (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
+  (assert (every? #(<= 0.0 % 1.0) probs)
+          "All the probabilities must be between 0.0 and 1.0.")
   (->Multinomial n probs))
 
 (defn dirichlet
   "Returns a Dirichlet distribution.
   Params: {:alphas [ℝ >= 0, ...]}"
   [{:keys [alphas]}]
+  (assert (every? non-neg? alphas) "All the alphas must be non-negative.")
   (->Dirichlet alphas))
 
 (defn dirichlet-multinomial
   "Returns a Dirichlet-multinomial distribution.
   Params: {:n ∈ ℕ, :alphas [ℝ >= 0, ...]}"
   [{:keys [n alphas]}]
+  (assert (pos-int? n) (str "n (" n ") must be a positive integer."))
+  (assert (every? non-neg? alphas) "All the alphas must be non-negative.")
   (->DirichletMultinomial n alphas))
 
 (defn cauchy
   "Returns a Cauchy distribution.
   Params: {:location ∈ ℝ, :scale ∈ ℝ > 0}"
   [{:keys [location scale]}]
-  (assert (pos? scale) (str "Scale (" scale ") must be positive"))
+  (assert (pos? scale) (str "scale (" scale ") must be positive."))
   (->Cauchy location scale))
 
 (defn log-normal
   "Returns a Log-normal distribution.
   The parameters are the log of the
   mean and sd of this distribution.
-  Params: {:location ∈ ℝ, :scale ∈ ℝ}"
+  Params: {:location ∈ ℝ, :scale ∈ ℝ > 0}"
   [{:keys [location scale mu sd]}]
+  (assert (pos? (or scale sd)) (str "scale/sd (" (or scale sd) ") must be positive."))
   (->LogNormal (or location mu) (or scale sd)))
 
 (defn pareto

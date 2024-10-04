@@ -1,3 +1,12 @@
+## 0.5.5 (2022-04-22)
+
+* Add quantile and cdf support for the uniform and exponential distributions
+* Assert `kixi.stats.distribution` parameters are within the valid range
+* Update docstrings in `kixi.stats.core` to describe when a `kixi.stats.protocol` type is returned
+* Fix bug in tests whereby positive and negative infinity would test equal
+* Fix bug in `significant?` which returned an error when the number of tails was unspecified
+* Exclude `abs` and `infinite?` to prevent compilation warnings
+
 ## 0.5.4 (2020-07-12)
 
 * Test that quantile and cdf functions are inverses

@@ -1,11 +1,9 @@
 (ns kixi.stats.test-test
-  (:require [kixi.stats.test :as sut]
+  (:require [clojure.test :refer [is deftest]]
+            [kixi.stats.test :as sut]
             [kixi.stats.core :refer [cross-tabulate]]
-            [kixi.stats.test-helpers :refer [=ish]]
-            #?@(:cljs
-                [[cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test :refer [is deftest]]])))
+            [kixi.stats.distribution :as dist]
+            [kixi.stats.test-helpers :refer [=ish]]))
 
 (deftest chi-squared-test-test
   (let [xtab (transduce identity (cross-tabulate :x :y)
@@ -47,3 +45,26 @@
 (deftest z-test-test
   (is (=ish (sut/p-value (sut/z-test {:mean 28 :sd 14.1 :n 75} {:mean 33 :sd 9.5 :n 50}) :<>)
             0.01785148959436078)))
+
+(deftest test-result-significance
+  (let [dist (dist/t {:v 10})
+        t-crit 2.0
+        alpha 0.05]
+    (is (not (-> (sut/test-result t-crit dist)
+                 (sut/significant? alpha))))
+    (is (not (-> (sut/test-result t-crit dist :<>)
+                 (sut/significant? alpha))))
+    (is (not (-> (sut/test-result t-crit dist)
+                 (sut/significant? alpha :<>))))
+    (is (-> (sut/test-result t-crit dist :>)
+            (sut/significant? alpha)))
+    (is (-> (sut/test-result t-crit dist)
+            (sut/significant? alpha :>)))
+    (is (not (-> (sut/test-result t-crit dist)
+                 (sut/significant? alpha :<))))
+    (is (not (-> (sut/test-result t-crit dist :<)
+                 (sut/significant? alpha))))
+    (is (-> (sut/test-result (- t-crit) dist :<)
+            (sut/significant? alpha)))
+    (is (-> (sut/test-result (- t-crit) dist)
+            (sut/significant? alpha :<)))))

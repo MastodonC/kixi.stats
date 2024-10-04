@@ -1,12 +1,10 @@
 (ns kixi.stats.math-test
-  (:require [kixi.stats.math :as sut :refer [abs]]
-            #?@(:cljs
-                [[cljs.test :refer-macros [is deftest]]]
-                :clj
-                [[clojure.test :refer [is deftest]]])))
+  (:refer-clojure :exclude [abs])
+  (:require [clojure.test :refer [is deftest]]
+            [kixi.stats.math :as sut :refer [abs]]))
 
 (defn approx= [a b tol]
-  (< (abs (- a b)) tol))
+  (< (/ (abs (- a b)) (abs (/ (+ a b) 2.0))) tol))
 
 (def gamma-point-values
   [3.99121704344051E-26 -1.01776034607733E-24 2.4935128478894578E-23
@@ -25,7 +23,7 @@
    1.7105420683195732E9 2.3092317922314236E10 3.3483860987355646E11
    5.189998453040125E12 8.563497447516206E13 1.4986120533153358E15
    2.772432298633372E16 5.4062429823350726E17 1.1082798113786905E19
-   2.3828015944641842E20 5.361303587544415E21 1.2599063430729375E23])
+   2.3828015944641842E20 5.361303587544415E21 1.2599063430729373E23])
 
 (def log-gamma-point-values
   [0.5723649429247001 -0.1207822376352452 0.2846828704729192 1.2009736023470743 2.453736570842442 3.9578139676187165 5.662562059857142 7.534364236758734 9.549267257301 11.689333420797267 13.940625219403763 16.29200047656724 18.73434751193645 21.260076156244708 23.862765841689086 26.536914491115613 29.277754515040815 32.08111489594735 34.94331577687682 37.8610865089611 40.8315009745308 43.85192586067516 46.91997879580878 50.03349410501916 53.19049452616927])
@@ -39,8 +37,11 @@
   (is (= 120.0 (sut/gamma 6)))
   (is (= 720.0 (sut/gamma 7)))
   (is (= 5040.0 (sut/gamma 8)))
-  (is (= (mapv sut/gamma (range -25.5 25))
-         gamma-point-values)))
+  (is (every? (fn [[x y]]
+                (approx= x y 1e-15))
+              (map vector
+                   (mapv sut/gamma (range -25.5 25))
+                   gamma-point-values))))
 
 (deftest log-gamma-returns-correct-point-values
   (is (->> (map vector (range 0.5 25) log-gamma-point-values)

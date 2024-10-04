@@ -1,11 +1,11 @@
 (ns kixi.stats.test-helpers
+  (:refer-clojure :exclude [abs infinite?])
   (:require [clojure.test.check.generators :as gen]
             [kixi.stats.math :refer [abs equal floor ceil]]))
 
-
-#?(:clj
-   (defn infinite? [x]
-     (and (float? x) (.isInfinite x))))
+(defn infinite? [x]
+  #?(:clj (Double/isInfinite x)
+     :cljs (cljs.core/infinite? x)))
 
 (defn finite?
   [x]
@@ -13,7 +13,7 @@
      :cljs (or (nil? x) (js/isFinite x))))
 
 (def numeric
-  (gen/such-that finite? (gen/one-of [gen/int gen/double (gen/return nil)])))
+  (gen/such-that finite? (gen/one-of [gen/small-integer gen/double (gen/return nil)])))
 
 (defn seq= [f]
   (fn [x y]
@@ -46,7 +46,7 @@
 
 (defn inf= [f]
   (fn [x y]
-    (if (and (infinite? x) (infinite? y))
+    (if (and (infinite? x) (= x y))
       true
       (f x y))))
 
@@ -56,7 +56,7 @@
               e (* (abs (min x y)) e))]
       (equal x y e))))
 
-(def =ish (-> (approx= 1e-11) inf= some= map= seq=))
+(def =ish (-> (approx= 1e-9) inf= some= map= seq=))
 
 (defn quantile'
   [p coll]

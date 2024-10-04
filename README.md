@@ -2,6 +2,15 @@
 
 A Clojure/ClojureScript library of statistical sampling and transducing functions.
 
+<div align="center">
+
+[![Build Status][build-status]][build-status-url]
+[![License][license]][license-url]
+[![cljdoc badge][cljdoc]][cljdoc-url]
+[![Clojars Project][clojars]][clojars-url]
+
+</div>
+
 **Available distributions:**
 
 * Bernoulli
@@ -74,10 +83,19 @@ Examples of `kixi.stats` usage can be seen between 10:20-16:00 of this video on 
 
 ## Installation
 
-Add the following dependency:
+Install `kixi.stats` into your Clojure project using the appropriate form at its
+Clojars page:
 
-```clojure
-[kixi/stats "0.5.4"]
+[![Clojars Project][clojars]][clojars-url]
+
+Or grab the most recent code using a Git dependency:
+
+```clj
+replace $GIT_SHA with the sha you'd like to target!
+
+{kixi/stats
+  {:git/url "https://github.com/MastodonC/kixi.stats.git"
+  :git/sha "$GIT_SHA"}}
 ```
 
 ## Usage
@@ -87,7 +105,7 @@ Add the following dependency:
 [kixi.stats.core](https://github.com/MastodonC/kixi.stats/blob/master/src/kixi/stats/core.cljc) contains statistical reducing functions that can be used with `transduce`:
 
 ```clojure
-(require '[kixi.stats.core :refer [standard-deviation correlation])
+(require '[kixi.stats.core :refer [standard-deviation correlation]])
 
 (->> [{:x 2} {:x 4} {:x 4} {:x 4} {:x 5} {:x 5} {:x 5} {:x 7} {:x 9}]
      (transduce (map :x) standard-deviation))
@@ -293,9 +311,19 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
   * [Simon Belak](https://github.com/sbelak)
   * [Elise Huard](https://github.com/elisehuard)
   * [Dorab Patel](https://github.com/bombaywalla)
+  * [Sam Ritchie](https://github.com/sritchie)
 
 ## License
 
-Copyright © 2018 Mastodon C Ltd
+Copyright © 2024 Mastodon C Ltd
 
 Distributed under the Eclipse Public License version 1.0.
+
+[build-status-url]: https://github.com/MastodonC/kixi.stats/actions?query=workflow%3A%22Clojure+CI%22
+[build-status]: https://github.com/MastodonC/kixi.stats/workflows/Clojure%20CI/badge.svg?branch=master
+[license-url]: LICENSE
+[license]: https://img.shields.io/badge/license-EPLv1-brightgreen.svg
+[cljdoc-url]: https://cljdoc.org/d/kixi/stats/CURRENT
+[cljdoc]: https://cljdoc.org/badge/kixi/stats
+[clojars-url]: https://clojars.org/kixi/stats
+[clojars]: https://img.shields.io/clojars/v/kixi/stats.svg
