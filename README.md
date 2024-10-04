@@ -311,6 +311,7 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
   * [Simon Belak](https://github.com/sbelak)
   * [Elise Huard](https://github.com/elisehuard)
   * [Dorab Patel](https://github.com/bombaywalla)
+  * [Sam Ritchie](https://github.com/sritchie)
 
 ## License
 
