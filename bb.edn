@@ -1,0 +1,28 @@
+{:deps {io.github.clj-kondo/clj-kondo-bb
+        {:git/sha "178b027e827172da0d63122a754bb4d765a6faeb"}}
+
+ :tasks
+ {test:clj
+  {:doc "Run CLJ tests."
+   :task (shell "clojure -X:test:runner")}
+
+  test:cljs
+  {:doc "Run CLJS tests."
+   :task (shell "npm run test")}
+
+  release
+  {:doc "Release the library to Clojars."
+   :task (shell "clojure -T:build publish")}
+
+  lint-deps
+  {:requires ([clj-kondo.core :as kondo])
+   :doc "Lint dependencies."
+   :task (kondo/run!
+          {:lint [(with-out-str
+                    (babashka.tasks/clojure "-Spath -A:dev:test"))]
+           :dependencies true})}
+
+  lint
+  {:doc "Lint source-containing directories with clj-kondo."
+   :task (exec 'clj-kondo.core/exec)
+   :exec-args {:lint ["src" "test"]}}}}
