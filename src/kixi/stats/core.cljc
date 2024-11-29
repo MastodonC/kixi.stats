@@ -1,5 +1,5 @@
 (ns kixi.stats.core
-  (:refer-clojure :exclude [count min max])
+  (:refer-clojure :exclude [count infinite? min max])
   (:require [kixi.stats.digest :as digest]
             #?(:clj [kixi.stats.distribution :as d])
             [kixi.stats.estimate :as e]
