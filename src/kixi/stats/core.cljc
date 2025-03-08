@@ -663,15 +663,21 @@
 (defn proportion
   "Calculate the proportion of inputs for which `pred` returns true."
   [pred]
-  (fn
-    ([] [0 0])
-    ([[n d] e]
-     (vector (cond-> n
-               (pred e) inc)
-             (inc d)))
-    ([[n d]]
-     (when (pos? d)
-       (double (/ n d))))))
+  (let [arrv (volatile! (long-array 2))]
+    (fn
+      ([] nil)
+      ([_ e]
+       (let [^longs arr @arrv]
+         (when (pred e)
+           (aset arr 0 (inc (aget arr 0))))
+         (aset arr 1 (inc (aget arr 1)))
+         (vreset! arrv arr)))
+      ([_]
+       (let [^longs arr @arrv
+             n (aget arr 0)
+             d (aget arr 1)]
+         (when (pos? d)
+           (double (/ n d))))))))
 
 (def share
   "Alias for proportion"
