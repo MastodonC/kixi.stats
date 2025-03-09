@@ -28,13 +28,13 @@ jobs:
           node-version: '16'
 
       - name: Cache m2
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: m2-${{ hashFiles('deps.edn') }}
 
       - name: Cache gitlibs
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.gitlibs
           key: gitlibs-${{ hashFiles('deps.edn') }}
