@@ -312,10 +312,11 @@ Pseudorandom number generation is provided by [test.check](https://github.com/cl
   * [Elise Huard](https://github.com/elisehuard)
   * [Dorab Patel](https://github.com/bombaywalla)
   * [Sam Ritchie](https://github.com/sritchie)
+  * [Oleksandr Yakushev](https://github.com/alexander-yakushev)
 
 ## License
 
-Copyright © 2024 Mastodon C Ltd
+Copyright © 2025 Mastodon C Ltd
 
 Distributed under the Eclipse Public License version 1.0.
 
