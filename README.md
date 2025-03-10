@@ -77,9 +77,7 @@ Variance, covariance, standard deviation, skewness and kurtosis each have sample
 
 ## Documentation
 
-View the [documentation here](https://cljdoc.xyz/d/kixi/stats).
-
-Examples of `kixi.stats` usage can be seen between 10:20-16:00 of this video on [Clojure for Machine Learning](https://skillsmatter.com/skillscasts/9050-clojure-for-machine-learning).
+View the [documentation here](https://cljdoc.org/d/kixi/stats).
 
 ## Installation
 
