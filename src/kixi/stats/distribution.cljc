@@ -607,6 +607,30 @@
       :cljs (ISeqable
              (-seq [this] (sampleable->seq this)))))
 
+(deftype ^:no-doc Truncated
+  [distribution lower upper lower-cdf upper-cdf]
+  p/PRandomVariable
+  (sample-1 [this rng]
+    (p/quantile distribution
+              (+ (* (rand-double rng) (- upper-cdf lower-cdf)) lower-cdf)))
+  (sample-n [this n rng]
+    (default-sample-n this n rng))
+  p/PBounded
+  (minimum [this] lower)
+  (maximum [this] upper)
+  p/PQuantile
+  (cdf [this x]
+    (cond (>= x upper) 1.0
+          (< x lower) 0.0
+          :else (/ (- (p/cdf distribution x) lower-cdf)
+                   (- upper-cdf lower-cdf))))
+  (quantile [this p]
+    (p/quantile distribution (+ (* p (- upper-cdf lower-cdf)) lower-cdf)))
+  #?@(:clj (clojure.lang.Seqable
+            (seq [this] (sampleable->seq this)))
+      :cljs (ISeqable
+             (-seq [this] (sampleable->seq this)))))
+
 ;;;; Public API
 
 (def minimum p/minimum)
@@ -794,6 +818,23 @@
   (assert (and (pos? scale) (pos? shape))
           (str "Scale (" scale ") and shape (" shape ") must be positive."))
   (->Pareto scale shape))
+
+(defn truncated
+  "Returns a distribution that is a truncated version
+  of the supplied `distribution` between the lower bound `lower`
+  and the upper bound `upper`.
+  Params: {:distribution, :lower ∈ ℝ, :upper ∈ ℝ, :lower < :upper}"
+  [{:keys [distribution lower upper]}]
+  (assert (and (satisfies? p/PRandomVariable distribution)
+               (satisfies? p/PQuantile distribution))
+          "distribution must satisfy PRandomVaraible and PQuantile.")
+  (assert (and (number? lower) (number? upper) (< lower upper))
+          (str "lower (" lower ") must be less than upper (" upper ")."))
+  (let [cdf-lower (cdf distribution lower)
+        cdf-upper (cdf distribution upper)]
+    (assert (< cdf-lower cdf-upper)
+            (str "lower (" lower ") and upper (" upper ") are beyond the extremes of the distribution."))
+    (->Truncated distribution lower upper cdf-lower cdf-upper)))
 
 (defn draw
   "Returns a single variate from the distribution.

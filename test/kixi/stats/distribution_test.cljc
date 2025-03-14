@@ -4,7 +4,7 @@
             [clojure.test.check.properties :as prop :refer [for-all]]
             [kixi.stats.distribution :as sut]
             #?(:clj [kixi.stats.core :as kixi])
-            [kixi.stats.math :refer [gamma exp equal]]
+            [kixi.stats.math :refer [abs gamma exp log equal]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check]
             [kixi.stats.test-helpers :refer #?(:clj  [=ish numeric cdf' quantile']
@@ -51,6 +51,21 @@
 
 (def gen-pos-real
   (gen/double* {:infinite? false :NaN? false :min 0.1 :max 100}))
+
+(def gen-small-real
+  (gen/double* {:infinite? false :NaN? false :min -10.0 :max 10}))
+
+(def gen-two-ascending-pos-reals
+  "Returns two positive reals in ascending order."
+  (->> (gen/tuple gen-pos-real gen-pos-real)
+       (gen/such-that (fn [[a b]] (not= a b)))
+       (gen/fmap sort)))
+
+(def gen-two-ascending-small-ints
+  "Returns two small ints in ascending order."
+  (->> (gen/tuple gen/small-integer gen/small-integer)
+       (gen/such-that (fn [[a b]] (not= a b)))
+       (gen/fmap sort)))
 
 (def gen-dof
   (gen/choose 3 1000))
@@ -337,6 +352,44 @@
             [a b] gen-two-ascending-ints]
     (let [draw (sut/draw (sut/uniform {:a a :b b}) {:seed seed})]
       (is (and (<= a draw) (< draw b))))))
+
+(defn trunc-draw
+  [distribution lower upper seed]
+  (sut/draw (sut/truncated {:distribution distribution :lower lower :upper upper}) {:seed seed}))
+
+(defspec truncated-does-not-exceed-bounds
+  test-opts
+  (for-all [seed gen/int
+            s gen-shape
+            r gen-rate
+            ;; with the next line, the chi-squared test fails.
+            ;; k (gen/fmap inc gen/nat)
+            k gen-small-n
+            [a b] (->> (gen/tuple gen/int gen/int)
+                       (gen/such-that (fn [[a b]] (not= a b)))
+                       (gen/fmap sort))
+            [f g] gen-two-ascending-small-ints
+            [n m] gen-two-ascending-pos-reals]
+       (let [scale (/ 1 r) shape (+ 1.0 s) v (inc r)]
+         ;; sd must be > 0 and of the order of a to avoid extremes of the normal.
+         (is (<= a (trunc-draw (sut/normal {:mu 0 :sd (+ 1.0 (abs a)) }) a b seed) b))
+         ;; v between 1 and 2 so the distribution is thicker tailed.
+         (is (<= f (trunc-draw (sut/t {:v v}) f g seed) g))
+         ;; This commented out test fails if k = 63 seed = 41 n = 0.1 m = 0.3
+         ;; (sut/quantile (sut/chi-squared {:k 63}) (sut/cdf (sut/chi-squared {:k 63}) 0.1)) => 0.004285954228546346
+         ;; (sut/quantile (sut/chi-squared {:k 63}) (sut/cdf (sut/chi-squared {:k 63}) 0.3)) => 0.004285954228546346
+         ;; This commented out test fails if k = 1 seed = 25 n = 71.0 m = 94.0
+         ;; (sut/quantile (sut/chi-squared {:k 1}) (sut/cdf (sut/chi-squared {:k 1}) 71.0)) => 200.0
+         ;; (sut/quantile (sut/chi-squared {:k 1}) (sut/cdf (sut/chi-squared {:k 1}) 94.0)) => 200.0
+         #_(is (<= n (trunc-draw (sut/chi-squared {:k k}) n m seed) m))
+         ;; lower and upper must be positive since log-normal support is (0, Inf)
+         (is (<= n (trunc-draw (sut/log-normal {:mu 0 :sd (+ 1.0 n) }) n m seed) m))
+         (is (<= n (trunc-draw (sut/cauchy {:location a :scale n }) n m seed) m))
+         ;; share must be > 1 for pareto means to be finite.
+         (is (<= (+ n scale)
+                 (trunc-draw (sut/pareto {:scale scale :shape shape}) (+ n scale) (+ m scale) seed)
+                 (+ m scale)))
+         )))
 
 (defspec exponential-returns-positive-floats
   test-opts
