@@ -4,7 +4,6 @@
 (def PI
   #?(:clj Math/PI
      :cljs js/Math.PI))
-
 (defn abs [x]
   (cond-> x
     (< x 0) -))
@@ -61,6 +60,10 @@
 (defn floor [x]
   #?(:clj  (Math/floor x)
      :cljs (js/Math.floor x)))
+
+(defn round [x]
+  #?(:clj  (Math/round x)
+     :cljs (js/Math.round x)))
 
 (defn equal [x y e]
   (<= (abs (- y x)) e))
