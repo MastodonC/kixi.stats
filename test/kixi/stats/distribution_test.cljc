@@ -52,6 +52,9 @@
 (def gen-pos-real
   (gen/double* {:infinite? false :NaN? false :min 0.1 :max 100}))
 
+(def gen-large-pos-real
+  (gen/double* {:infinite? false :NaN? false :min 500 :max 1000}))
+
 (def gen-dof
   (gen/choose 3 1000))
 
@@ -314,6 +317,11 @@
                             (sut/poisson {:lambda alpha})))
     (is (converges-to-mean? (mapv #(* small-n %) ps)
                             (sut/multinomial {:n small-n :probs ps})))))
+
+(defspec poisson-mean-converges-to-mean-for-large-values
+  {:num-tests 10 :par 4}
+  (for-all [alpha gen-large-pos-real]
+    (is (converges-to-mean? alpha (sut/poisson {:lambda alpha})))))
 
 (defspec sample-summary-returns-categorical-sample-frequencies
   test-opts

@@ -1,6 +1,6 @@
 (ns kixi.stats.distribution
   (:refer-clojure :exclude [shuffle rand-int abs])
-  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos tan atan PI sq floor erf erfcinv] :as m]
+  (:require [kixi.stats.math :refer [abs pow log sqrt exp cos tan atan PI sq floor erf erfcinv round] :as m]
             [kixi.stats.protocols :as p :refer [sample-1 sample-n sample-frequencies]]
             [clojure.test.check.random :refer [make-random rand-double split split-n]]))
 
@@ -442,21 +442,29 @@
                (-seq [this] (sampleable->seq this)))))
 
 (deftype ^:no-doc Poisson
-    [lambda]
-    p/PRandomVariable
-    (sample-1 [_ rng]
+         [lambda]
+  p/PRandomVariable
+  (sample-1 [_ rng]
+    (cond
+      (<= lambda 0.0) 0.0
+      (<= lambda 50)
       (let [l (exp (- lambda))]
         (loop [p 1 k 0 rng rng]
           (let [p (* p (rand-double rng))]
             (if (> p l)
               (recur p (inc k) (next-rng rng))
-              k)))))
-    (sample-n [this n rng]
-      (default-sample-n this n rng))
-    #?@(:clj (clojure.lang.Seqable
-              (seq [this] (sampleable->seq this)))
-        :cljs (ISeqable
-               (-seq [this] (sampleable->seq this)))))
+              k))))
+      :else
+      (->> (+ lambda (* (sqrt lambda)
+                        (rand-normal rng)))
+           (round)
+           (max 0))))
+  (sample-n [this n rng]
+    (default-sample-n this n rng))
+  #?@(:clj (clojure.lang.Seqable
+            (seq [this] (sampleable->seq this)))
+      :cljs (ISeqable
+             (-seq [this] (sampleable->seq this)))))
 
 (deftype ^:no-doc Weibull
     [shape scale]
