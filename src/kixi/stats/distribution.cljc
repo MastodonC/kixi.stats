@@ -31,7 +31,7 @@
 
 (defn ^:no-doc btrd-f
   [k]
-  (case k
+  (case (long k)
     0 0.08106146679532726
     1 0.04134069595540929
     2 0.02767792568499834
@@ -220,14 +220,14 @@
 (defn ^:no-doc categorical-sample
   [ks ps n rng]
   (loop [coll '() n n
-         rem 1 rng rng
+         rem 1.0 rng rng
          ks ks ps ps]
     (if (and (seq ks) (> rem 0))
       (let [k (first ks)
             p (first ps)
             x (sample-1 (->Binomial n (/ p rem)) rng)]
         (recur (concat coll (repeat x k)) (- n x)
-               (- rem p) (next-rng rng)
+               (double (- rem p)) (next-rng rng)
                (rest ks) (rest ps)))
       coll)))
 
@@ -449,7 +449,7 @@
       (<= lambda 0.0) 0.0
       (<= lambda 50)
       (let [l (exp (- lambda))]
-        (loop [p 1 k 0 rng rng]
+        (loop [p 1.0 k 0 rng rng]
           (let [p (* p (rand-double rng))]
             (if (> p l)
               (recur p (inc k) (next-rng rng))
@@ -490,14 +490,14 @@
     p/PDiscreteRandomVariable
     (sample-frequencies [_ n rng]
       (loop [coll (transient {}) n n
-             rem 1 rng rng
+             rem 1.0 rng rng
              ks ks ps ps]
         (if (and (seq ks) (pos? rem))
           (let [k (first ks)
                 p (first ps)
                 x (rand-binomial n (/ p rem) rng)]
             (recur (assoc! coll k x) (- n x)
-                   (- rem p) (next-rng rng)
+                   (double (- rem p)) (next-rng rng)
                    (rest ks) (rest ps)))
           (persistent! coll))))
     #?@(:clj (clojure.lang.Seqable
@@ -510,13 +510,13 @@
     p/PRandomVariable
     (sample-1 [_ rng]
       (loop [coll (transient []) n n
-             rem 1 rng rng
+             rem 1.0 rng rng
              ps ps]
         (if (and (seq ps) (pos? rem))
           (let [p (first ps)
                 x (rand-binomial n (/ p rem) rng)]
             (recur (conj! coll x) (- n x)
-                   (- rem p) (next-rng rng)
+                   (double (- rem p)) (next-rng rng)
                    (rest ps)))
           (persistent! coll))))
     (sample-n [this n rng]
