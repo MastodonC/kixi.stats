@@ -62,7 +62,7 @@
      :cljs (js/Math.floor x)))
 
 (defn round [x]
-  #?(:clj  (Math/round x)
+  #?(:clj  (Math/round (double x))
      :cljs (js/Math.round x)))
 
 (defn equal [x y e]
@@ -187,7 +187,7 @@
   (let [abs-x (abs x)]
     (if (<= abs-x 20)
       (if (>= x 1)
-        (loop [t (dec x) p 1]
+        (loop [t (dec x) p 1.0]
           (if (> t 1.5)
             (recur (dec t) (* p t))
             (/ p (inc (inv-gamma-1pm1 t)))))
@@ -301,9 +301,9 @@
         qap (inc a)
         qam (dec a)
         d (/ 1 (check (- 1 (/ (* x qab) qap))))]
-    (loop [m 1
+    (loop [m 1.0
            h d
-           c 1
+           c 1.0
            d d]
       (let [m2 (* 2 m)
             aa (* m (- b m) (/ x (* (+ qam m2) (+ a m2))))
@@ -312,7 +312,7 @@
             h (* h d c)
             aa (* (- (+ a m)) (+ qab m) (/ x (* (+ a m2) (+ qap m2))))
             d (/ 1 (check (+ 1 (* aa d))))
-            c (check (+ 1 (/ aa c)))
+            c (double (check (+ 1 (/ aa c))))
             del (* d c)
             h (* h del)]
         (if (or (< (abs del) 3e-7)

@@ -4,7 +4,7 @@
 
 #?(:clj
    (defn ^:no-doc nan->nil [n]
-     (when-not (or (.isNaN n) (.isInfinite n)) n)))
+     (when-not (or (Double/isNaN n) (Double/isInfinite n)) n)))
 
 #?(:clj
    (defn t-digest
