@@ -5,7 +5,7 @@
 ;; ## Variables
 
 (def lib 'kixi/stats)
-(def version "0.5.8")
+(def version "0.5.9")
 
 (defn- ->version
   ([] version)

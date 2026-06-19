@@ -1,3 +1,8 @@
+## 0.5.9 (2026-06-19)
+
+* Fix reflection and auto-boxing warnings when `*warn-on-reflection*` is enabled
+* Optimise skewness and kurtosis reducers using mutable double arrays to reduce allocations
+
 ## 0.5.5 (2022-04-22)
 
 * Add quantile and cdf support for the uniform and exponential distributions
