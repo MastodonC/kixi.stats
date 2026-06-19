@@ -220,8 +220,11 @@
   "Calculates the population skewness of numeric inputs.
   See: http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
   (completing skewness-s
-              (fn [[c _ m2 m3]]
-                (let [d (pow m2 1.5)]
+              (fn [^doubles acc]
+                (let [c  (aget acc 0)
+                      m2 (aget acc 2)
+                      m3 (aget acc 3)
+                      d  (pow m2 1.5)]
                   (when-not (zero? d)
                     (/ (* (sqrt c) m3) d))))))
 
@@ -277,10 +280,13 @@
 (def kurtosis-p
   "Calculates the population kurtosis of numeric inputs.
   See http://www.macroption.com/kurtosis-formula/"
-  (completing kurtosis-s (fn [[c _ m2 _ m4]]
-                           (when-not (zero? m2)
-                             (- (/ (* c m4)
-                                   (sq m2)) 3)))))
+  (completing kurtosis-s (fn [^doubles acc]
+                           (let [c  (aget acc 0)
+                                 m2 (aget acc 2)
+                                 m4 (aget acc 4)]
+                             (when-not (zero? m2)
+                               (- (/ (* c m4)
+                                     (sq m2)) 3))))))
 
 (defn covariance-s
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which
