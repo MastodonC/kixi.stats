@@ -182,11 +182,15 @@
   "Estimates the sample skewness of numeric inputs.
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance."
   (fn
-    ([] [0.0 0.0 0.0 0.0])
-    ([[^double c ^double m1 ^double m2 ^double m3 :as acc] e]
+    ([] (double-array 4 0.0))
+    ([^doubles acc e]
      (if (nil? e)
        acc
-       (let [e   (double e)
+       (let [c   (aget acc 0)
+             m1  (aget acc 1)
+             m2  (aget acc 2)
+             m3  (aget acc 3)
+             e   (double e)
              c'  (inc c)
              d   (- e m1)
              dc  (/ d c')
@@ -195,9 +199,16 @@
              m3' (+ m3
                     (/ (* (pow d 3) (- c' 1) (- c' 2)) (sq c'))
                     (* -3 m2 dc))]
-         [c' m1' m2' m3'])))
-    ([[c _ m2 m3]]
-     (let [d (* (pow m2 1.5) (- c 2))]
+         (aset acc 0 c')
+         (aset acc 1 m1')
+         (aset acc 2 m2')
+         (aset acc 3 m3')
+         acc)))
+    ([^doubles acc]
+     (let [c   (aget acc 0)
+           m2  (aget acc 2)
+           m3  (aget acc 3)
+           d (* (pow m2 1.5) (- c 2))]
        (when-not (zero? d)
          (/ (* (sqrt (dec c)) m3 c) d))))))
 
@@ -209,8 +220,11 @@
   "Calculates the population skewness of numeric inputs.
   See: http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
   (completing skewness-s
-              (fn [[c _ m2 m3]]
-                (let [d (pow m2 1.5)]
+              (fn [^doubles acc]
+                (let [c  (aget acc 0)
+                      m2 (aget acc 2)
+                      m3 (aget acc 3)
+                      d  (pow m2 1.5)]
                   (when-not (zero? d)
                     (/ (* (sqrt c) m3) d))))))
 
@@ -219,11 +233,16 @@
   See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
   and http://www.real-statistics.com/descriptive-statistics/symmetry-skewness-kurtosis."
   (fn
-    ([] [0.0 0.0 0.0 0.0 0.0])
-    ([[^double c ^double m1 ^double m2 ^double m3 ^double m4 :as acc] e]
+    ([] (double-array 5 0.0))
+    ([^doubles acc e]
      (if (nil? e)
        acc
-       (let [e   (double e)
+       (let [c   (aget acc 0)
+             m1  (aget acc 1)
+             m2  (aget acc 2)
+             m3  (aget acc 3)
+             m4  (aget acc 4)
+             e   (double e)
              c'  (inc c)
              d   (- e m1)
              dc  (/ d c')
@@ -237,14 +256,22 @@
                        (pow c' 3))
                     (* 6 m2 (sq dc))
                     (* -4 m3 dc))]
-         [c' m1' m2' m3' m4'])))
-    ([[c _ m2 _ m4]]
-     (when-not (or (zero? m2) (< c 4))
-       (let [v (/ m2 (dec c))]
-         (- (/ (* c (inc c) m4)
-               (* (- c 1) (- c 2) (- c 3) (sq v)))
-            (/ (* 3 (sq (dec c)))
-               (* (- c 2) (- c 3)))))))))
+         (aset acc 0 c')
+         (aset acc 1 m1')
+         (aset acc 2 m2')
+         (aset acc 3 m3')
+         (aset acc 4 m4')
+         acc)))
+    ([^doubles acc]
+     (let [c   (aget acc 0)
+           m2  (aget acc 2)
+           m4  (aget acc 4)]
+       (when-not (or (zero? m2) (< c 4))
+         (let [v (/ m2 (dec c))]
+           (- (/ (* c (inc c) m4)
+                 (* (- c 1) (- c 2) (- c 3) (sq v)))
+              (/ (* 3 (sq (dec c)))
+                 (* (- c 2) (- c 3))))))))))
 
 (def kurtosis
   "Alias for kurtosis-s."
@@ -253,10 +280,13 @@
 (def kurtosis-p
   "Calculates the population kurtosis of numeric inputs.
   See http://www.macroption.com/kurtosis-formula/"
-  (completing kurtosis-s (fn [[c _ m2 _ m4]]
-                           (when-not (zero? m2)
-                             (- (/ (* c m4)
-                                   (sq m2)) 3)))))
+  (completing kurtosis-s (fn [^doubles acc]
+                           (let [c  (aget acc 0)
+                                 m2 (aget acc 2)
+                                 m4 (aget acc 4)]
+                             (when-not (zero? m2)
+                               (- (/ (* c m4)
+                                     (sq m2)) 3))))))
 
 (defn covariance-s
   "Given two functions of an input `(fx input)` and `(fy input)`, each of which
